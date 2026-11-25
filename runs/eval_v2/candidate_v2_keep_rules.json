@@ -1,15 +1,15 @@
 {
- "name": "candidate_keep_rules",
+ "name": "candidate_v2_keep_rules",
  "config_dir": "config/candidate_v2_keep",
  "intent": null,
  "intent_status": "off",
  "seed": 1,
  "intent_val": {
   "n": 383,
-  "accuracy": 0.517,
-  "macro_f1": 0.5267,
-  "answer_match": 0.5326,
-  "fallback_rate": 0.1567,
+  "accuracy": 0.5196,
+  "macro_f1": 0.5293,
+  "answer_match": 0.5352,
+  "fallback_rate": 0.1593,
   "errors": [
    {
     "q": "Переписка до глубокой ночи. Нравится или бесит?",
@@ -191,7 +191,7 @@
  "traps_val": {
   "n": 414,
   "fallback_rate": 0.5845,
-  "gold_similarity_mean": 0.174,
+  "gold_similarity_mean": 0.1739,
   "by_category": {
    "ambiguity": {
     "n": 7,
@@ -375,7 +375,7 @@
  "dialogues_val": {
   "dialogues": 182,
   "turns": 611,
-  "gold_similarity_mean": 0.2261,
+  "gold_similarity_mean": 0.227,
   "fallback_rate": 0.3028,
   "repeated_replies": 0,
   "low_similarity_examples": [
@@ -467,17 +467,8 @@
  },
  "regression": {
   "n": 29,
-  "passed": 28,
-  "failed": [
-   {
-    "dialog": [
-     "с кем ты живёшь"
-    ],
-    "expect": "Дильназ",
-    "a": "Снимаем квартиру с подругой",
-    "route": "bank:hall_live"
-   }
-  ]
+  "passed": 29,
+  "failed": []
  },
  "memory": {
   "n": 14,
@@ -561,11 +552,11 @@
   "canon_examples": [],
   "non_russian": 0,
   "non_russian_examples": [],
-  "len_mean": 35.6,
+  "len_mean": 35.7,
   "len_max": 161,
-  "time_ms_mean": 78.3,
-  "time_ms_p95": 142.3,
-  "time_ms_max": 311.9,
+  "time_ms_mean": 80.9,
+  "time_ms_p95": 157.6,
+  "time_ms_max": 365.7,
   "over_45s": 0
  }
 }

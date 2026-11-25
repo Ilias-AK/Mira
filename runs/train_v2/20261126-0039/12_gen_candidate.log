@@ -1,0 +1,3 @@
+gen_candidate val_unseen_response.jsonl {"n": 144, "gold_similarity_mean": 0.2018, "token_f1_mean": 0.1885, "distinct_ratio": 0.4583, "most_common_share": 0.2431, "most_common": "вроде 38", "canon_violations": 0, "over_300": 0, "non_russian": 0, "time_s_mean": 0.064, "time_s_max": 0.373}
+gen_candidate val.jsonl {"n": 300, "gold_similarity_mean": 0.2891, "token_f1_mean": 0.2642, "distinct_ratio": 0.4333, "most_common_share": 0.04, "most_common": "это какой то шифр", "canon_violations": 0, "over_300": 0, "non_russian": 0, "time_s_mean": 0.063, "time_s_max": 0.213}
+Сохранено: runs\eval_v2\gen_candidate.json

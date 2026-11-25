@@ -145,6 +145,16 @@ def topic_phrase(text):
         return None
     return t
 
+
+ASKS_FOREIGN = re.compile(r"англ|english|переве|перевод|по-?казахски|қазақ|на\s+казахском|скажи\s+на\s+\w+ском", re.IGNORECASE)
+
+
+def foreign_answer(answer, question):
+    """An answer that is mostly not Cyrillic, for a question that did not ask for another language."""
+    letters = re.findall(r"[A-Za-zА-Яа-яЁё]", answer)
+    latin = sum(1 for c in letters if c.isascii())
+    return bool(letters) and latin / len(letters) > 0.5 and not ASKS_FOREIGN.search(question)
+
 class MiraRuntime:
     def __init__(self, persona_path, bank_path, fallbacks_path, index_path=None, *, retriever=None,
                  use_retrieval=True, retrieval_k=40, min_context_similarity=0.55, min_retrieval_score=3.5,
@@ -241,7 +251,10 @@ class MiraRuntime:
         key = self._pin_key("bank", best["id"], best.get("topic"))
         if self._pinned_repeat(key):
             return None
-        choice = self._pick(best["answers"], best["id"] + text, allow_question=True)   # the team's own wording
+        answers = [a for a in best["answers"] if not foreign_answer(a, text)]
+        if not answers:
+            return None
+        choice = self._pick(answers, best["id"] + text, allow_question=True)   # the team's own wording
         if not choice:
             return None
         self._pending_pin = key
@@ -464,7 +477,10 @@ class MiraRuntime:
         again = self._pinned_repeat(key)
         if again:
             return again, "repeat_topic:" + item["id"], item.get("topic")
-        choice = self._pick(item["answers"], item["id"] + text, allow_question=True)   # the team's own wording
+        answers = [a for a in item["answers"] if not foreign_answer(a, text)]
+        if not answers:
+            return None
+        choice = self._pick(answers, item["id"] + text, allow_question=True)   # the team's own wording
         if not choice:
             return None
         self._pending_pin = key
@@ -504,11 +520,16 @@ class MiraRuntime:
             return None
         if item.get("mode") and item["mode"] != self.mode:
             return None
+        if item.get("after") and not set(item["after"]) & set(self._recent_topics()):
+            return None   # a follow-up topic ("По какому предмету?") only right after its own question
         key = self._pin_key("bank", item["id"], item.get("topic"))
         again = self._pinned_repeat(key)
         if again:
             return again, "repeat_topic:" + item["id"], item.get("topic")
-        choice = self._pick(item["answers"], item["id"] + text, allow_question=bool(item.get("ask")))
+        choices = [a for a in item["answers"] if not foreign_answer(a, text)]
+        if not choices:
+            return None   # e.g. "I'm tired" for a question that never asked for English
+        choice = self._pick(choices, item["id"] + text, allow_question=bool(item.get("ask")))
         if not choice:
             return None
         self._pending_pin = key

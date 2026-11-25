@@ -554,9 +554,9 @@
   "non_russian_examples": [],
   "len_mean": 32.2,
   "len_max": 161,
-  "time_ms_mean": 58.8,
-  "time_ms_p95": 93.6,
-  "time_ms_max": 236.9,
+  "time_ms_mean": 68.6,
+  "time_ms_p95": 108.8,
+  "time_ms_max": 216.2,
   "over_45s": 0
  }
 }

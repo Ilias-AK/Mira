@@ -6,6 +6,10 @@
   "bytes": 16167645
  },
  "inputs_used": {
+  "(repo) config/overrides_v2.json": {
+   "sha256": "693c60df216ff09bb04ea08b7db5f33586b5ae671c604abcdc236829e1cf6f4d",
+   "bytes": 972
+  },
   "runtime/bank.clean.json": {
    "sha256": "5d38599f9f5d158540398683b848db994d4aecc1957c73ee6e0a146fdccc3395",
    "bytes": 292727
@@ -70,8 +74,8 @@
  "inputs_not_used": "excluded/, reports/, generator_ready/, canon_extensions.json (карантин), new_topics_intent_candidates (только ревью)",
  "outputs": {
   "config/candidate_v2/bank.json": {
-   "sha256": "82d1efafbb5bd6505d84ca2e5d602cc57bd004a7adf42b2bc09f72768efe6705",
-   "bytes": 292728
+   "sha256": "c2a46872f497ebb96710d82d98f7003dbb328e04b0a369cab0cf1a1bfbdb174d",
+   "bytes": 292753
   },
   "config/candidate_v2/fallbacks.json": {
    "sha256": "4aa455d7c2006a1367cf4f82d8867f0d66190a7200361c2ff2eb1db110f61387",
@@ -90,8 +94,8 @@
    "bytes": 1072617
   },
   "config/candidate_v2_keep/bank.json": {
-   "sha256": "77cbdfabd5c3fba38e5fece7dd5d39b0efe419d80913d1655c99ad4e0f7dce75",
-   "bytes": 268331
+   "sha256": "92de0f879f8b62289cc5ef2567e0806cda20f2542207bcc7a43f9358dcaa9966",
+   "bytes": 268356
   },
   "config/candidate_v2_keep/fallbacks.json": {
    "sha256": "4aa455d7c2006a1367cf4f82d8867f0d66190a7200361c2ff2eb1db110f61387",
@@ -170,6 +174,7 @@
   "intent_train_dropped_near_val": 0,
   "intent_val": 383,
   "keep_profile_answers_restored": 217,
+  "overrides_applied": 2,
   "retrieval_topics": 1153,
   "runtime_canon_violations": 0,
   "team_qa_examples_removed_as_val": 0

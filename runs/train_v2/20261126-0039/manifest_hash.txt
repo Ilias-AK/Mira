@@ -1,0 +1,9 @@
+
+
+Algorithm : SHA256
+Hash      : 4D7558AEAB366E3C549962EDC9B27B0DE82499EE77DEC03BFCEDC29397C437B
+            C
+Path      : D:\turing-arena\data\delivery_v2\manifest.json
+
+
+

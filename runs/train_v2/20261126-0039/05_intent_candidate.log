@@ -1,0 +1,1 @@
+{"name": "intent_candidate", "model": "runs\\mira_intent_v2\\intent.pt", "threshold": 0.4, "labels_in_model": 1030, "n": 383, "covered": 383, "accuracy_on_covered": 0.8381, "accuracy_on_all": 0.8381, "macro_f1_on_covered": 0.8221, "share_above_threshold": 0.8616, "precision_above_threshold": 0.9364}

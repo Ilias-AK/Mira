@@ -236,6 +236,17 @@ def main(argv=None):
     team_qa["_note"] = (team_qa.get("_note", "") + " Кандидат v2: + формулировки уточнений из context_followups, "
                         "+ темы new_topics (source=retrieval_v2) только для поиска по примерам.").strip()
 
+    # точечные правки после проверки (config/overrides_v2.json, с причиной у каждой)
+    overrides_path = HERE / "config" / "overrides_v2.json"
+    if overrides_path.exists():
+        overrides = json.loads(overrides_path.read_text(encoding="utf-8"))
+        bank_by_id = {i["id"]: i for i in bank["intents"]}
+        for ident, change in overrides.get("bank", {}).items():
+            if ident in bank_by_id:
+                bank_by_id[ident].update({k: v for k, v in change.items() if k != "why"})
+                stats["overrides_applied"] += 1
+        archive.read_log["(repo) config/overrides_v2.json"] = {"sha256": sha256_bytes(overrides_path.read_bytes()),
+                                                              "bytes": overrides_path.stat().st_size}
     cfg.mkdir(parents=True, exist_ok=True)
     write_json(cfg / "bank.json", bank)
     write_json(cfg / "team_qa.json", team_qa)

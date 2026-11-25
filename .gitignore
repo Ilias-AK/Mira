@@ -26,3 +26,5 @@ runs/**/logs/
 runs/**/reviews/
 backup*/
 backups/
+
+!runs/mira_intent_v2/intent.pt
