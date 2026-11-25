@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fbfbfc">
+  <meta name="color-scheme" content="light">
+  <title>Mira 1.0</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <a class="skip-link" href="#composerInput">Перейти к сообщению</a>
+
+  <div class="app" id="app">
+    <aside class="sidebar" id="sidebar" aria-label="Навигация">
+      <div class="brand">
+        <img src="/assets/mira-logo.png" alt="Mira">
+      </div>
+
+      <button class="new-chat" id="newChatButton" type="button">
+        <span class="plus" aria-hidden="true"></span>
+        <span>Новый диалог</span>
+      </button>
+
+      <div class="sidebar-section">
+        <div class="section-label">Быстрый старт</div>
+        <nav class="prompt-list" aria-label="Примеры вопросов">
+          <button class="prompt-item" type="button" data-prompt="Расскажи немного о себе">
+            <span class="prompt-icon" aria-hidden="true">✦</span>
+            <span>Знакомство</span>
+          </button>
+          <button class="prompt-item" type="button" data-prompt="Как у тебя дела с учёбой и работой?">
+            <span class="prompt-icon" aria-hidden="true">◌</span>
+            <span>Учёба и кофе</span>
+          </button>
+          <button class="prompt-item" type="button" data-prompt="О чём ты обычно думаешь перед сном?">
+            <span class="prompt-icon" aria-hidden="true">☾</span>
+            <span>Разговор перед сном</span>
+          </button>
+        </nav>
+      </div>
+
+      <div class="sidebar-spacer"></div>
+
+      <div class="local-status" id="localStatus">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span class="local-status-copy">
+          <strong>Локально</strong>
+          <small>без интернета</small>
+        </span>
+      </div>
+    </aside>
+
+    <button class="sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="Закрыть меню"></button>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-button menu-button" id="sidebarButton" type="button" aria-label="Открыть меню" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+
+        <div class="model-picker">
+          <button class="model-button" id="modelButton" type="button" aria-expanded="false" aria-controls="modelMenu">
+            <span class="model-name">Mira 1.0</span>
+            <span class="chevron" aria-hidden="true"></span>
+          </button>
+          <div class="model-menu" id="modelMenu" role="dialog" aria-label="Модель">
+            <div class="model-menu-title">Модель</div>
+            <div class="model-card">
+              <span class="mini-mark" aria-hidden="true">
+                <img src="/assets/mira-logo.png" alt="">
+              </span>
+              <span>
+                <strong>Mira 1.0</strong>
+                <small>Собственная модель · офлайн</small>
+              </span>
+              <span class="check" aria-hidden="true">✓</span>
+            </div>
+            <div class="model-mode" id="modelMode">Режим зала</div>
+          </div>
+        </div>
+
+        <div class="topbar-spacer"></div>
+
+        <div class="connection-pill" id="connectionPill" title="Состояние модели">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="connectionText">Подключение…</span>
+        </div>
+      </header>
+
+      <div class="notice" id="notice" role="status" aria-live="polite"></div>
+
+      <div class="chat-scroll" id="chatScroll">
+        <section class="conversation" id="conversation" aria-label="Диалог с Mira">
+          <div class="welcome" id="welcome">
+            <div class="welcome-mark" aria-hidden="true">
+              <img src="/assets/mira-logo.png" alt="">
+            </div>
+            <p class="eyebrow">Mira 1.0</p>
+            <h1>С чего начнём?</h1>
+            <p class="welcome-copy">Можно спросить что угодно — отвечу коротко и по-человечески)</p>
+            <div class="suggestions">
+              <button type="button" data-prompt="Ты больше любишь Астану или Кокшетау?">Астана или Кокшетау?</button>
+              <button type="button" data-prompt="Почему ты выбрала учёт и аудит?">Почему учёт и аудит?</button>
+              <button type="button" data-prompt="Какой кофе ты любишь больше всего?">Какой кофе любишь?</button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="composer-shell">
+        <form class="composer" id="composer">
+          <textarea id="composerInput" rows="1" maxlength="500" placeholder="Спросить Mira…" aria-label="Сообщение Mira"></textarea>
+          <span class="character-count" id="characterCount" aria-live="polite"></span>
+          <button class="send-button" id="sendButton" type="submit" aria-label="Отправить сообщение" disabled>
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M5 12h13M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </form>
+        <p class="footer-note"><span id="footerModel">Mira 1.0</span> работает локально и может ошибаться</p>
+      </footer>
+    </main>
+  </div>
+
+  <template id="userMessageTemplate">
+    <div class="message-row user-row">
+      <div class="user-bubble"></div>
+    </div>
+  </template>
+
+  <template id="assistantMessageTemplate">
+    <article class="message-row assistant-row">
+      <div class="assistant-mark" aria-hidden="true"><img src="/assets/mira-logo.png" alt=""></div>
+      <div class="assistant-content">
+        <div class="assistant-text"></div>
+        <div class="message-meta">
+          <button class="copy-button" type="button" aria-label="Скопировать ответ">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <rect x="6.5" y="6.5" width="9" height="9" rx="2" stroke="currentColor" stroke-width="1.35"/>
+              <path d="M13.5 6V5a2 2 0 0 0-2-2h-6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h1" stroke="currentColor" stroke-width="1.35"/>
+            </svg>
+          </button>
+          <span class="response-time"></span>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <template id="thinkingTemplate">
+    <article class="message-row assistant-row thinking-row" aria-live="polite">
+      <div class="assistant-mark" aria-hidden="true"><img src="/assets/mira-logo.png" alt=""></div>
+      <div class="thinking-content">
+        <span class="thinking-dots" aria-label="Mira формирует ответ"><i></i><i></i><i></i></span>
+        <span>Mira думает…</span>
+      </div>
+    </article>
+  </template>
+
+  <script src="/app.js" defer></script>
+</body>
+</html>
