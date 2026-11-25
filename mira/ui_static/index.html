@@ -3,18 +3,41 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#fbfbfc">
+  <meta name="theme-color" content="#f7f9fd">
   <meta name="color-scheme" content="light">
   <title>Mira 1.0</title>
-  <link rel="stylesheet" href="/app.css?v=4">
+  <link rel="stylesheet" href="/app.css?v=6">
 </head>
 <body>
   <a class="skip-link" href="#composerInput">Перейти к сообщению</a>
 
   <div class="app" id="app">
-    <aside class="sidebar" id="sidebar" aria-label="Навигация">
-      <div class="brand">
-        <img src="/assets/mira-logo.png" alt="Mira">
+    <aside class="rail" aria-label="Основная навигация">
+      <button class="rail-brand" type="button" aria-label="Mira" data-new-chat>
+        <img src="/assets/mira-mark-cobalt.png" alt="">
+      </button>
+
+      <nav class="rail-nav" aria-label="Разделы">
+        <button class="rail-button active" type="button" aria-label="Диалоги" aria-current="page">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5.5 18.5 3 21v-5.3A8.5 8.5 0 0 1 4.5 3h15A1.5 1.5 0 0 1 21 4.5v10a1.5 1.5 0 0 1-1.5 1.5H8.8a8.4 8.4 0 0 1-3.3 2.5Z"/></svg>
+        </button>
+        <button class="rail-button" type="button" aria-label="Коллекции">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m4 8 8-4 8 4-8 4-8-4Z"/><path d="m4 12 8 4 8-4M4 16l8 4 8-4"/></svg>
+        </button>
+        <button class="rail-button" type="button" aria-label="О Мире">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v17H6.5A2.5 2.5 0 0 0 4 22V5.5ZM20 5.5A2.5 2.5 0 0 0 17.5 3H12v17h5.5A2.5 2.5 0 0 1 20 22V5.5Z"/></svg>
+        </button>
+      </nav>
+
+      <button class="rail-button rail-settings" type="button" aria-label="Настройки">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9.8 3.4 10.5 2h3l.7 1.4 1.5.6 1.5-.5 2.1 2.1-.5 1.5.6 1.5 1.4.7v3l-1.4.7-.6 1.5.5 1.5-2.1 2.1-1.5-.5-1.5.6-.7 1.4h-3l-.7-1.4-1.5-.6-1.5.5-2.1-2.1.5-1.5-.6-1.5-1.4-.7v-3l1.4-.7.6-1.5-.5-1.5 2.1-2.1 1.5.5 1.5-.6Z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </aside>
+
+    <aside class="thread-sidebar" id="sidebar" aria-label="Диалоги">
+      <div class="wordmark">
+        <img src="/assets/mira-mark-cobalt.png" alt="">
+        <span>Mira</span>
       </div>
 
       <button class="new-chat" id="newChatButton" type="button">
@@ -23,31 +46,18 @@
       </button>
 
       <div class="sidebar-section">
-        <div class="section-label">Быстрый старт</div>
-        <nav class="prompt-list" aria-label="Примеры вопросов">
-          <button class="prompt-item" type="button" data-prompt="Расскажи немного о себе">
-            <span class="prompt-icon" aria-hidden="true">✦</span>
-            <span>Знакомство</span>
+        <p class="section-label">Диалоги</p>
+        <nav class="thread-list" aria-label="История диалогов">
+          <button class="thread-item active" id="currentThread" type="button" aria-current="page">
+            <span id="currentThreadLabel">Новый диалог</span>
           </button>
-          <button class="prompt-item" type="button" data-prompt="Как у тебя дела с учёбой и работой?">
-            <span class="prompt-icon" aria-hidden="true">◌</span>
-            <span>Учёба и кофе</span>
+          <button class="thread-item" type="button" data-prompt="Как меня зовут?">
+            <span>Как меня зовут</span>
           </button>
-          <button class="prompt-item" type="button" data-prompt="О чём ты обычно думаешь перед сном?">
-            <span class="prompt-icon" aria-hidden="true">☾</span>
-            <span>Разговор перед сном</span>
+          <button class="thread-item" type="button" data-prompt="Расскажи немного о себе">
+            <span>Знакомство с Мирой</span>
           </button>
         </nav>
-      </div>
-
-      <div class="sidebar-spacer"></div>
-
-      <div class="local-status" id="localStatus">
-        <span class="status-dot" aria-hidden="true"></span>
-        <span class="local-status-copy">
-          <strong>Mira готова</strong>
-          <small>локальная модель</small>
-        </span>
       </div>
     </aside>
 
@@ -55,33 +65,27 @@
 
     <main class="main">
       <header class="topbar">
-        <button class="icon-button menu-button" id="sidebarButton" type="button" aria-label="Открыть меню" aria-expanded="false">
+        <button class="icon-button menu-button" id="sidebarButton" type="button" aria-label="Открыть диалоги" aria-expanded="false">
           <span></span><span></span><span></span>
         </button>
 
-        <div class="model-picker">
-          <button class="model-button" id="modelButton" type="button" aria-expanded="false" aria-controls="modelMenu">
-            <span class="model-name">Mira 1.0</span>
-            <span class="chevron" aria-hidden="true"></span>
-          </button>
-          <div class="model-menu" id="modelMenu" role="dialog" aria-label="Модель">
-            <div class="model-menu-title">Модель</div>
-            <div class="model-card">
-              <span class="mini-mark" aria-hidden="true">
-                <img src="/assets/mira-logo.png" alt="">
-              </span>
-              <span>
-                <strong>Mira 1.0</strong>
-                <small>Собственная модель</small>
-              </span>
-              <span class="check" aria-hidden="true">✓</span>
-            </div>
-            <div class="model-mode" id="modelMode">Режим зала</div>
-          </div>
-        </div>
-
+        <h1 class="conversation-title" id="conversationTitle">Новый диалог</h1>
         <div class="topbar-spacer"></div>
 
+        <div class="model-picker">
+          <button class="model-button" id="modelButton" type="button" aria-expanded="false" aria-controls="modelMenu">
+            <span>Mira 1.0</span>
+            <span class="chevron" aria-hidden="true"></span>
+          </button>
+          <div class="model-menu" id="modelMenu" role="dialog" aria-label="Выбор модели">
+            <p>Текущая модель</p>
+            <button class="model-option" type="button" aria-current="true">
+              <img src="/assets/mira-mark-cobalt.png" alt="">
+              <span>Mira 1.0</span>
+              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 10 3 3 7-7"/></svg>
+            </button>
+          </div>
+        </div>
       </header>
 
       <div class="notice" id="notice" role="status" aria-live="polite"></div>
@@ -89,68 +93,63 @@
       <div class="chat-scroll" id="chatScroll">
         <section class="conversation" id="conversation" aria-label="Диалог с Mira">
           <div class="welcome" id="welcome">
-            <div class="welcome-mark" aria-hidden="true">
-              <img src="/assets/mira-logo.png" alt="">
-            </div>
-            <p class="eyebrow">Mira 1.0</p>
-            <h1>С чего начнём?</h1>
-            <p class="welcome-copy">Спроси что угодно. Отвечу коротко и по-человечески</p>
+            <img class="welcome-mark" src="/assets/mira-mark-cobalt.png" alt="">
+            <h2>С чего начнём?</h2>
+            <p>Можно спросить что угодно. Отвечу коротко и по-человечески)</p>
             <div class="suggestions">
-              <button type="button" data-prompt="Ты больше любишь Астану или Кокшетау?">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
-                <span>Астана или Кокшетау?</span>
-              </button>
-              <button type="button" data-prompt="Почему ты выбрала учёт и аудит?">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3 9 9-5 9 5-9 5-9-5Z"/><path d="M7 12v5c3 2 7 2 10 0v-5M21 10v6"/></svg>
-                <span>Почему учёт и аудит?</span>
-              </button>
-              <button type="button" data-prompt="Какой кофе ты любишь больше всего?">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 9h12v5a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5V9Z"/><path d="M17 11h1.5a2.5 2.5 0 0 1 0 5H17M8 5c0 1 1 1 1 2M12 5c0 1 1 1 1 2"/></svg>
-                <span>Какой кофе любишь?</span>
-              </button>
+              <button type="button" data-prompt="Ты больше любишь Астану или Кокшетау?">Астана или Кокшетау?</button>
+              <button type="button" data-prompt="Почему ты выбрала учёт и аудит?">Почему учёт и аудит?</button>
+              <button type="button" data-prompt="Какой кофе ты любишь больше всего?">Какой кофе любишь?</button>
             </div>
           </div>
         </section>
       </div>
 
       <button class="scroll-bottom-button" id="scrollBottomButton" type="button" aria-label="К последнему сообщению" hidden>
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="m7 10 5 5 5-5"/>
-        </svg>
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
       </button>
 
       <footer class="composer-shell">
         <form class="composer" id="composer">
-          <textarea id="composerInput" rows="1" maxlength="500" placeholder="Спросить Mira…" aria-label="Сообщение Mira"></textarea>
+          <div class="composer-tools">
+            <button class="add-button" id="addButton" type="button" aria-label="Дополнительные действия" aria-expanded="false" aria-controls="addMenu">
+              <span class="plus" aria-hidden="true"></span>
+            </button>
+            <div class="add-menu" id="addMenu" role="menu">
+              <button type="button" role="menuitem" data-new-chat>
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                Новый диалог
+              </button>
+              <button type="button" role="menuitem" data-fill-prompt="Расскажи что-нибудь неожиданное о себе">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6L12 3Z"/></svg>
+                Подсказать вопрос
+              </button>
+            </div>
+          </div>
+
+          <textarea id="composerInput" rows="1" maxlength="500" placeholder="Спросить Mira..." aria-label="Сообщение Mira"></textarea>
           <span class="character-count" id="characterCount" aria-live="polite"></span>
           <button class="send-button" id="sendButton" type="submit" aria-label="Отправить сообщение" disabled>
-            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M12 19V5M6.5 10.5 12 5l5.5 5.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m4 12 15-7-4 14-3.2-5.2L4 12Z"/><path d="m11.8 13.8 3.6-4"/></svg>
           </button>
         </form>
-        <p class="footer-note">Ответы могут быть неточными</p>
       </footer>
     </main>
   </div>
 
   <template id="userMessageTemplate">
-    <div class="message-row user-row">
-      <div class="user-bubble"></div>
-    </div>
+    <div class="message-row user-row"><div class="user-bubble"></div></div>
   </template>
 
   <template id="assistantMessageTemplate">
     <article class="message-row assistant-row">
-      <div class="assistant-mark" aria-hidden="true"><img src="/assets/mira-logo.png" alt=""></div>
+      <img class="assistant-mark" src="/assets/mira-mark-cobalt.png" alt="">
       <div class="assistant-content">
+        <div class="assistant-label">Mira</div>
         <div class="assistant-text"></div>
         <div class="message-meta">
           <button class="copy-button" type="button" aria-label="Скопировать ответ">
-            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <rect x="6.5" y="6.5" width="9" height="9" rx="2" stroke="currentColor" stroke-width="1.35"/>
-              <path d="M13.5 6V5a2 2 0 0 0-2-2h-6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h1" stroke="currentColor" stroke-width="1.35"/>
-            </svg>
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="6.5" y="6.5" width="9" height="9" rx="2"/><path d="M13.5 6V5a2 2 0 0 0-2-2h-6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h1"/></svg>
           </button>
           <span class="response-time"></span>
         </div>
@@ -160,14 +159,14 @@
 
   <template id="thinkingTemplate">
     <article class="message-row assistant-row thinking-row" aria-live="polite">
-      <div class="assistant-mark" aria-hidden="true"><img src="/assets/mira-logo.png" alt=""></div>
+      <img class="assistant-mark" src="/assets/mira-mark-cobalt.png" alt="">
       <div class="thinking-content">
+        <strong>Mira думает</strong>
         <span class="thinking-dots" aria-label="Mira формирует ответ"><i></i><i></i><i></i></span>
-        <span>Mira думает…</span>
       </div>
     </article>
   </template>
 
-  <script src="/app.js?v=4" defer></script>
+  <script src="/app.js?v=6" defer></script>
 </body>
 </html>

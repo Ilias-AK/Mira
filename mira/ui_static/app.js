@@ -15,7 +15,10 @@
   const sidebarBackdrop = document.getElementById("sidebarBackdrop");
   const modelButton = document.getElementById("modelButton");
   const modelMenu = document.getElementById("modelMenu");
-  const modelMode = document.getElementById("modelMode");
+  const addButton = document.getElementById("addButton");
+  const addMenu = document.getElementById("addMenu");
+  const conversationTitle = document.getElementById("conversationTitle");
+  const currentThreadLabel = document.getElementById("currentThreadLabel");
   const notice = document.getElementById("notice");
   const userTemplate = document.getElementById("userMessageTemplate");
   const assistantTemplate = document.getElementById("assistantMessageTemplate");
@@ -42,12 +45,21 @@
     return payload;
   }
 
-  function setConnection(connected, text) {
+  function setConnection(connected) {
     state.connected = connected;
-    const local = document.getElementById("localStatus");
-    local.querySelector(".status-dot").style.background = connected ? "" : "var(--danger)";
-    local.querySelector("strong").textContent = connected ? "Mira готова" : "Нет связи";
-    local.querySelector("small").textContent = connected ? "локальная модель" : "сервер недоступен";
+    app.dataset.connected = String(connected);
+  }
+
+  function titleFromMessage(message) {
+    const compact = String(message).replace(/\s+/g, " ").trim();
+    if (!compact) return "Новый диалог";
+    return compact.length > 34 ? `${compact.slice(0, 34).trimEnd()}…` : compact;
+  }
+
+  function updateConversationTitle(message) {
+    const title = titleFromMessage(message);
+    conversationTitle.textContent = title;
+    currentThreadLabel.textContent = title;
   }
 
   function showNotice(message) {
@@ -68,6 +80,8 @@
       if (!saved || saved.sessionId !== sessionId || !Array.isArray(saved.messages)) return;
       state.messages = saved.messages.filter((item) => item && ["user", "assistant"].includes(item.role));
       state.messages.forEach(renderSavedMessage);
+      const firstUserMessage = state.messages.find((item) => item.role === "user");
+      updateConversationTitle(firstUserMessage ? firstUserMessage.text : "");
     } catch {
       sessionStorage.removeItem(STORAGE_KEY);
     }
@@ -89,6 +103,11 @@
   function closeSidebar() {
     app.classList.remove("sidebar-open");
     sidebarButton.setAttribute("aria-expanded", "false");
+  }
+
+  function closeAddMenu() {
+    addMenu.classList.remove("open");
+    addButton.setAttribute("aria-expanded", "false");
   }
 
   function scrollToBottom(behavior = "smooth") {
@@ -160,6 +179,7 @@
     }
 
     state.busy = true;
+    if (!state.messages.some((item) => item.role === "user")) updateConversationTitle(message);
     input.value = "";
     input.disabled = true;
     appendUser(message);
@@ -178,11 +198,11 @@
       if (remaining) await new Promise((resolve) => setTimeout(resolve, remaining));
       thinking.remove();
       appendAssistant(answer.text, answer.seconds);
-      setConnection(true, "Mira готова");
+      setConnection(true);
     } catch (error) {
       thinking.remove();
       showNotice(error.message || "Mira сейчас не отвечает");
-      setConnection(false, "Нет связи");
+      setConnection(false);
     } finally {
       state.busy = false;
       input.disabled = false;
@@ -200,6 +220,7 @@
       state.messages = [];
       conversation.querySelectorAll(".message-row").forEach((row) => row.remove());
       sessionStorage.removeItem(STORAGE_KEY);
+      updateConversationTitle("");
       updateWelcome();
       closeSidebar();
       input.value = "";
@@ -226,6 +247,12 @@
   });
 
   newChatButton.addEventListener("click", resetConversation);
+  document.querySelectorAll("[data-new-chat]").forEach((button) => {
+    button.addEventListener("click", () => {
+      closeAddMenu();
+      resetConversation();
+    });
+  });
   sidebarButton.addEventListener("click", () => {
     const open = app.classList.toggle("sidebar-open");
     sidebarButton.setAttribute("aria-expanded", String(open));
@@ -239,11 +266,26 @@
     modelButton.setAttribute("aria-expanded", String(open));
   });
 
+  addButton.addEventListener("click", () => {
+    const open = addMenu.classList.toggle("open");
+    addButton.setAttribute("aria-expanded", String(open));
+  });
+
+  document.querySelectorAll("[data-fill-prompt]").forEach((button) => {
+    button.addEventListener("click", () => {
+      input.value = button.dataset.fillPrompt || "";
+      closeAddMenu();
+      updateComposer();
+      input.focus();
+    });
+  });
+
   document.addEventListener("click", (event) => {
     if (!event.target.closest(".model-picker")) {
       modelMenu.classList.remove("open");
       modelButton.setAttribute("aria-expanded", "false");
     }
+    if (!event.target.closest(".composer-tools")) closeAddMenu();
   });
 
   document.querySelectorAll("[data-prompt]").forEach((button) => {
@@ -255,6 +297,7 @@
       closeSidebar();
       modelMenu.classList.remove("open");
       modelButton.setAttribute("aria-expanded", "false");
+      closeAddMenu();
     }
   });
 
@@ -265,12 +308,11 @@
       state.sessionId = status.sessionId;
       state.maxQuestionCharacters = status.maxQuestionCharacters || 500;
       input.maxLength = state.maxQuestionCharacters;
-      modelMode.textContent = status.modeLabel;
-      setConnection(true, "Mira готова");
+      setConnection(true);
       restoreState(status.sessionId);
       updateWelcome();
     } catch {
-      setConnection(false, "Нет связи");
+      setConnection(false);
       showNotice("Локальный сервер Mira недоступен");
     }
     updateComposer();

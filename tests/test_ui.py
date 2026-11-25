@@ -67,6 +67,10 @@ def test_ui_status_message_reset_and_static_page():
         assert status == 200
         assert "Mira 1.0" in page
         assert "С чего начнём?" in page
+        assert "Локальная модель" not in page
+        assert "mira-mark-cobalt.png" in page
+
+        assert (STATIC_DIR / "assets" / "mira-mark-cobalt.png").read_bytes().startswith(b"\x89PNG")
 
         status, payload = call(url, "/api/status")
         assert status == 200
@@ -117,6 +121,9 @@ def test_ui_keeps_page_fixed_and_scrolls_only_conversation():
 
     assert 'id="chatScroll"' in page
     assert 'id="scrollBottomButton"' in page
+    assert 'id="addButton"' in page
+    assert 'id="conversationTitle"' in page
+    assert "grid-template-columns: var(--rail-width) var(--sidebar-width) minmax(0, 1fr);" in styles
     assert "position: fixed;" in styles
     assert "overscroll-behavior: none;" in styles
     assert "overscroll-behavior-y: contain;" in styles
