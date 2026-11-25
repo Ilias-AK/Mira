@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "recipe": "Expanded language training and paired dialogue corpus comparison; experimental, no automatic promotion",
+  "baseline_checkpoint": "runs/main/dialogue/best.pt",
+  "common": {
+    "tokenizer": "artifacts/tokenizer.json",
+    "batch_size": 4,
+    "accumulation": 8,
+    "threads": 4,
+    "seed": 42
+  },
+  "language": {
+    "init_checkpoint": "runs/main/language/best.pt",
+    "data": "data/language_v2/train.jsonl",
+    "val_data": "data/language_v2/val.jsonl",
+    "steps": 40000,
+    "language_window_policy": "full-span",
+    "segment_steps": 10000,
+    "lr": 0.00015,
+    "warmup_steps": 1000,
+    "eval_every": 1000,
+    "save_every": 500,
+    "eval_batches": 500
+  },
+  "dialogue": {
+    "steps": 32000,
+    "segment_steps": 4000,
+    "control_steps": 4000,
+    "lr": 0.00015,
+    "warmup_steps": 1000,
+    "eval_every": 1000,
+    "save_every": 500,
+    "eval_batches": 500,
+    "retrieval_index": "artifacts/retrieval",
+    "retrieval_dropout": 0.25,
+    "control": {
+      "data": "data/processed/train.jsonl",
+      "val_data": "data/processed/val.jsonl",
+      "retrieval_cache": "artifacts/retrieval_cache.sqlite3"
+    },
+    "candidate": {
+      "data": "data/curated/dialogue_v2/train.jsonl",
+      "val_data": "data/processed/val.jsonl",
+      "retrieval_cache": "artifacts/training_v2/retrieval_cache.sqlite3",
+      "source_weights": {
+        "toloka": 0.7,
+        "telegram_pairs": 0.25,
+        "oasst": 0.025,
+        "oasst2": 0.025
+      }
+    }
+  },
+  "review": {
+    "train_data": "data/processed/train.jsonl",
+    "val_data": "data/processed/val.jsonl",
+    "cache": "artifacts/retrieval_cache.sqlite3",
+    "index": "artifacts/retrieval",
+    "rounds": "configs/conversation_v2_rounds.json",
+    "persona": "configs/persona.json",
+    "max_per_source": 2000,
+    "generation_examples": 200,
+    "batch_size": 4
+  }
+}

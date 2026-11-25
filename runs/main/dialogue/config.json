@@ -1,0 +1,98 @@
+{
+  "model": {
+    "vocab_size": 8192,
+    "d_model": 384,
+    "n_heads": 6,
+    "encoder_layers": 4,
+    "decoder_layers": 4,
+    "ff_mult": 4,
+    "dropout": 0.1,
+    "max_source_length": 512,
+    "max_target_length": 96,
+    "pad_id": 0,
+    "bos_id": 2,
+    "eos_id": 3,
+    "copy_enabled": true,
+    "gate_loss_weight": 0.1
+  },
+  "training": {
+    "config": null,
+    "data": "data/processed/train.jsonl",
+    "val_data": "data/processed/val.jsonl",
+    "tokenizer": "artifacts/tokenizer.json",
+    "output_dir": "runs/main/dialogue",
+    "preset": "main",
+    "stage": "dialogue",
+    "steps": 16000,
+    "hours": 18.0,
+    "batch_size": 4,
+    "accumulation": 8,
+    "lr": 0.00015,
+    "warmup_steps": 100,
+    "weight_decay": 0.1,
+    "grad_clip": 1.0,
+    "seed": 42,
+    "threads": 4,
+    "eval_every": 200,
+    "save_every": 100,
+    "log_every": 20,
+    "eval_batches": 20,
+    "validation_sampling": "fixed-shuffle",
+    "device": "cuda",
+    "resume": "runs\\main\\dialogue\\last.pt",
+    "init_checkpoint": null,
+    "retrieval_index": "artifacts/retrieval",
+    "retrieval_cache": "artifacts/retrieval_cache.sqlite3",
+    "retrieval_dropout": 0.25,
+    "max_source_length": 512,
+    "max_target_length": 96,
+    "d_model": null,
+    "n_heads": null,
+    "encoder_layers": null,
+    "decoder_layers": null,
+    "dropout": 0.1,
+    "no_copy": false,
+    "no_amp": false,
+    "train_data_signature": {
+      "path": "D:\\turing-arena\\data\\processed\\train.jsonl",
+      "size": 492118632,
+      "mtime_ns": 1795180429764194300,
+      "split": "train",
+      "stage": "dialogue",
+      "version": 3,
+      "count": 139458,
+      "sha256": "a489716ee95931b18459a018215eb75370c809cf8ab5c6568155e26f4d0ca350"
+    },
+    "val_data_signature": {
+      "path": "D:\\turing-arena\\data\\processed\\val.jsonl",
+      "size": 28529763,
+      "mtime_ns": 1795180429936404700,
+      "split": "validation",
+      "stage": "dialogue",
+      "version": 3,
+      "count": 7516,
+      "sha256": "367abac211ab7bede4f75666f99bdde045a3d03883450b6eb126dcf9b0d2af5b"
+    },
+    "retrieval_signature": {
+      "version": 1,
+      "index_sha256": "e5db3583b5aff5c3f4ddb889738d230a3d8c57babceb18130fb1d61016a4360a",
+      "reranker_sha256": "99a1aec3ced8c9ca7e17b957e61cf29622b1d43753d4afeaa82e18ddd5efc280"
+    },
+    "retrieval_cache_signature": {
+      "version": 1,
+      "index_sha256": "e5db3583b5aff5c3f4ddb889738d230a3d8c57babceb18130fb1d61016a4360a",
+      "reranker_sha256": "99a1aec3ced8c9ca7e17b957e61cf29622b1d43753d4afeaa82e18ddd5efc280",
+      "data_sha256": {
+        "train": "a489716ee95931b18459a018215eb75370c809cf8ab5c6568155e26f4d0ca350",
+        "val": "367abac211ab7bede4f75666f99bdde045a3d03883450b6eb126dcf9b0d2af5b"
+      },
+      "search": {
+        "k": 1,
+        "candidate_pool": 256,
+        "postings_per_term": 128,
+        "history": true,
+        "use_reranker": null
+      }
+    }
+  }
+}

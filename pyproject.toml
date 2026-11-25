@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "turing-arena"
+version = "0.1.0"
+description = "Offline Russian dialogue retrieval and a from-scratch copy generator"
+requires-python = ">=3.11"
+dependencies = [
+  "torch>=2.10,<2.11",
+  "tokenizers==0.22.1",
+  "pyarrow==23.0.1",
+  "requests>=2.32.3,<3",
+  "numpy>=1.26,<3",
+  "PyYAML==6.0.3",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.4,<9"]
+
+[project.scripts]
+arena = "arena.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["arena*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+

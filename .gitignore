@@ -1,0 +1,28 @@
+# окружение и кэш
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# большие данные и веса (не помещаются в GitHub, см. README)
+data/raw/**/*.jsonl
+data/raw/**/*.parquet
+data/processed/*.jsonl
+data/processed/.arena_offsets/
+data/curated/
+data/language_v2/
+data/expansion/
+artifacts/retrieval/
+artifacts/*.sqlite3*
+runs/**/*.pt
+!runs/mira_intent/intent.pt
+runs/**/snapshots/
+*.zip
+
+# логи и отчёты прогонов
+runs/mira/
+runs/**/logs/
+runs/**/reviews/
+backup*/
+backups/

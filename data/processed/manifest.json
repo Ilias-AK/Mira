@@ -1,0 +1,101 @@
+{
+  "format_version": 1,
+  "config": {
+    "sources": [
+      "toloka",
+      "oasst",
+      "wikipedia"
+    ],
+    "include_toloka": true,
+    "wiki_shards": "1",
+    "wiki_config": "20231101.ru",
+    "max_wiki_chars": 200000000,
+    "max_response_chars": 512,
+    "max_history_turns": 8,
+    "max_history_chars": 4096,
+    "wiki_chunk_chars": 2400,
+    "seed": 20261120,
+    "val_fraction": 0.05,
+    "test_fraction": 0.05,
+    "response_filter_sha256": "460f8392a22ef477cbad43189c32df73f7477802cc36eec4a4b0c7e740592a26",
+    "duplicate_key": "normalized_last_context_and_response_or_text"
+  },
+  "inputs": [
+    {
+      "path": "data\\raw\\toloka\\TlkPersonaChatRus.zip",
+      "bytes": 6139432,
+      "sha256": "50ac87b445bd53d0a90451b76991a5de32f80fb1c9e0efb6092e57a096f20a47"
+    },
+    {
+      "path": "data\\raw\\oasst\\2023-04-12_oasst_ready.messages.jsonl.gz",
+      "bytes": 34196309,
+      "sha256": "286a6e9a5a413b3272ae9c0b5a20d327983dea1c24342ae28cb244a6da65185c"
+    },
+    {
+      "path": "data\\raw\\wikipedia\\train-00000-of-00021.parquet",
+      "bytes": 581024230,
+      "sha256": "9f8eaf92accb29a4641010655a50d1c8a5880d22020a5c98ea2666a28c7be66a"
+    }
+  ],
+  "outputs": {
+    "train": {
+      "path": "data\\processed\\train.jsonl",
+      "bytes": 492118632,
+      "sha256": "a489716ee95931b18459a018215eb75370c809cf8ab5c6568155e26f4d0ca350",
+      "records": 231074
+    },
+    "val": {
+      "path": "data\\processed\\val.jsonl",
+      "bytes": 28529763,
+      "sha256": "367abac211ab7bede4f75666f99bdde045a3d03883450b6eb126dcf9b0d2af5b",
+      "records": 12976
+    },
+    "test": {
+      "path": "data\\processed\\test.jsonl",
+      "bytes": 24655106,
+      "sha256": "8b16b5f05a3914351f32583fab0edd4d6be58a76a98c6594377e64999c79dd47",
+      "records": 12017
+    }
+  },
+  "counts": {
+    "toloka_input_dialogues": 10013,
+    "toloka_input_turns": 168783,
+    "records": 256067,
+    "records_test": 12017,
+    "records_toloka": 152316,
+    "records_toloka_test": 7440,
+    "records_dialogue": 154532,
+    "characters_dialogue": 8547063,
+    "records_train": 231074,
+    "records_toloka_train": 137498,
+    "duplicate_records_removed": 6410,
+    "records_val": 12976,
+    "records_toloka_val": 7378,
+    "dialogue_targets_filtered": 95,
+    "dialogue_targets_filtered_toloka": 14,
+    "response_filter_explicit_profanity": 8,
+    "response_filter_graphic_violence": 3,
+    "response_filter_assistant_boilerplate": 38,
+    "response_filter_contact_url": 44,
+    "response_filter_targeted_abuse": 1,
+    "oasst_input_messages": 88838,
+    "oasst_filtered_input_messages": 81530,
+    "records_oasst": 2216,
+    "records_oasst_train": 1960,
+    "records_oasst_val": 138,
+    "dialogue_targets_filtered_oasst": 81,
+    "records_oasst_test": 118,
+    "oasst_rejected_parent_chains": 1,
+    "response_filter_contact_phone": 1,
+    "wikipedia_input_articles": 18367,
+    "records_wikipedia": 101535,
+    "records_wikipedia_train": 91616,
+    "records_text": 101535,
+    "characters_text": 199974814,
+    "records_wikipedia_val": 5460,
+    "records_wikipedia_test": 4459,
+    "wikipedia_filtered_articles": 87,
+    "wikipedia_character_limit_reached": 1
+  },
+  "elapsed_seconds": 195.16
+}

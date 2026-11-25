@@ -1,0 +1,34 @@
+{
+  "format_version": 1,
+  "inputs": [
+    {
+      "path": "data\\processed\\train.jsonl",
+      "sha256": "a489716ee95931b18459a018215eb75370c809cf8ab5c6568155e26f4d0ca350"
+    }
+  ],
+  "tokenizers_version": "0.22.1",
+  "split": "train",
+  "requested_vocab_size": 8192,
+  "actual_vocab_size": 8192,
+  "min_frequency": 2,
+  "max_chars": 0,
+  "special_tokens": {
+    "<pad>": 0,
+    "<unk>": 1,
+    "<bos>": 2,
+    "<eos>": 3,
+    "<sep>": 4,
+    "<question>": 5,
+    "<history>": 6,
+    "<persona>": 7,
+    "<retrieved>": 8,
+    "<memory>": 9,
+    "<tool>": 10,
+    "<user>": 11,
+    "<assistant>": 12,
+    "<mask>": 13
+  },
+  "sha256": "ace2b2116b76ceb579b52da590ecb54572a6e23515d50b47d42ca7e139b9746c",
+  "text_segments": 1691114,
+  "characters": 239434538
+}

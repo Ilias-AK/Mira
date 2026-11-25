@@ -1,0 +1,23 @@
+{
+  "rounds": [
+    {"id": "operations", "turns": [
+      {"question": "Привет! Как прошёл день?"},
+      {"question": "Сколько будет 17 * 23?", "expected_contains": ["391"]},
+      {"question": "Сколько букв ё в слове ёлка?", "expected_contains": ["1"]},
+      {"question": "Напиши слово «кот» наоборот.", "expected_contains": ["ток"]},
+      {"question": "Посчитай 1/8", "expected_contains": ["0.125"]}
+    ]},
+    {"id": "memory", "turns": [
+      {"question": "Меня зовут Илья."},
+      {"question": "Назовём муршиком желание остаться дома."},
+      {"question": "Как меня зовут?", "expected_contains": ["Илья"]},
+      {"question": "Что значит муршик?", "expected_contains": ["желание остаться дома"]},
+      {"question": "Когда в последний раз хотелось отменить все планы?"}
+    ]},
+    {"id": "conversation", "turns": [
+      {"question": "Как бы ты провёл вечер без интернета?"},
+      {"question": "А если на улице дождь?"},
+      {"question": "Почему ты выбрал именно это?"}
+    ]}
+  ]
+}

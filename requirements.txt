@@ -1,0 +1,8 @@
+# Install CUDA/CPU torch separately with scripts/bootstrap_lenovo.ps1.
+tokenizers==0.22.1
+pyarrow==23.0.1
+requests==2.32.3
+numpy>=1.26,<3
+PyYAML==6.0.3
+pytest==8.4.1
+

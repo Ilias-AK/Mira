@@ -1,0 +1,155 @@
+{
+  "rounds": [
+    {
+      "id": "operations",
+      "turns": [
+        {
+          "question": "Привет! Как прошёл день?",
+          "answer": "Привет! Отлично, а у тебя?",
+          "seconds": 0.48400000000037835,
+          "route": "generator",
+          "diagnostics": {
+            "candidate_count": 12,
+            "rejected": [],
+            "generation_status": "ok"
+          }
+        },
+        {
+          "question": "Сколько будет 17 * 23?",
+          "answer": "391",
+          "seconds": 0.0,
+          "route": "tool",
+          "diagnostics": {},
+          "expected_check_passed": true
+        },
+        {
+          "question": "Сколько букв ё в слове ёлка?",
+          "answer": "1",
+          "seconds": 0.0,
+          "route": "tool",
+          "diagnostics": {},
+          "expected_check_passed": true
+        },
+        {
+          "question": "Напиши слово «кот» наоборот.",
+          "answer": "ток",
+          "seconds": 0.0,
+          "route": "tool",
+          "diagnostics": {},
+          "expected_check_passed": true
+        },
+        {
+          "question": "Посчитай 1/8",
+          "answer": "0.125",
+          "seconds": 0.01599999999962165,
+          "route": "tool",
+          "diagnostics": {},
+          "expected_check_passed": true
+        }
+      ]
+    },
+    {
+      "id": "memory",
+      "turns": [
+        {
+          "question": "Меня зовут Илья.",
+          "answer": "Меня зовут Андрей, я учусь в университете, а ты?",
+          "seconds": 0.18700000000171713,
+          "route": "generator",
+          "diagnostics": {
+            "candidate_count": 12,
+            "rejected": [],
+            "generation_status": "ok"
+          }
+        },
+        {
+          "question": "Назовём муршиком желание остаться дома.",
+          "answer": "А я люблю гулять и слушать музыку, особенно музыку",
+          "seconds": 0.3600000000005821,
+          "route": "generator",
+          "diagnostics": {
+            "candidate_count": 12,
+            "rejected": [],
+            "generation_status": "ok"
+          }
+        },
+        {
+          "question": "Как меня зовут?",
+          "answer": "Илья",
+          "seconds": 0.0,
+          "route": "tool",
+          "diagnostics": {},
+          "expected_check_passed": true
+        },
+        {
+          "question": "Что значит муршик?",
+          "answer": "желание остаться дома",
+          "seconds": 0.0,
+          "route": "tool",
+          "diagnostics": {},
+          "expected_check_passed": true
+        },
+        {
+          "question": "Когда в последний раз хотелось отменить все планы?",
+          "answer": "Я люблю гулять и слушать музыку",
+          "seconds": 0.35900000000037835,
+          "route": "generator",
+          "diagnostics": {
+            "candidate_count": 12,
+            "rejected": [],
+            "generation_status": "ok"
+          }
+        }
+      ]
+    },
+    {
+      "id": "conversation",
+      "turns": [
+        {
+          "question": "Как бы ты провёл вечер без интернета?",
+          "answer": "Привет, я учусь в университете, а ты?",
+          "seconds": 0.23399999999674037,
+          "route": "generator",
+          "diagnostics": {
+            "candidate_count": 12,
+            "rejected": [],
+            "generation_status": "ok"
+          }
+        },
+        {
+          "question": "А если на улице дождь?",
+          "answer": "Я учусь в университете, а ты?",
+          "seconds": 0.375,
+          "route": "generator",
+          "diagnostics": {
+            "candidate_count": 12,
+            "rejected": [],
+            "generation_status": "ok"
+          }
+        },
+        {
+          "question": "Почему ты выбрал именно это?",
+          "answer": "Да, я учусь в университете, а ты?",
+          "seconds": 0.375,
+          "route": "generator",
+          "diagnostics": {
+            "candidate_count": 12,
+            "rejected": [],
+            "generation_status": "ok"
+          }
+        }
+      ]
+    }
+  ],
+  "metrics": {
+    "answers": 13,
+    "empty": 0,
+    "over_300_characters": 0,
+    "emergency": 0,
+    "max_seconds": 0.48400000000037835,
+    "over_45_seconds": 0,
+    "expected_checks": 6,
+    "expected_checks_passed": 6,
+    "note": "Technical checks are not a blind human evaluation."
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "examples": 1790,
+  "topics": 1028,
+  "train_rows": 7165,
+  "val_rows": 357,
+  "val_accuracy": 0.8291316526610645,
+  "threshold": 0.4,
+  "checkpoint": "runs\\main\\dialogue\\best.pt",
+  "round_files": [
+    "data/team_raw\\rounds_2026-11-23.txt"
+  ],
+  "paraphrase_files": [],
+  "seconds": 219
+}
