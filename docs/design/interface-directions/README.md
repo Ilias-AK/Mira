@@ -43,6 +43,25 @@ thinking state, preserve intentional whitespace, and avoid cropping, browser
 chrome, oversized type, avatars, upload controls, status copy, and decorative
 marketing content.
 
+### A v3 — refined welcome screen
+
+- File: `interface-a-cobalt-coral-v3-welcome.png`.
+- Architecture: compact dark global rail, calm conversation sidebar, quiet
+  product header, and a centered welcome workspace.
+- Density: realistic full-screen scale with a smaller identity mark, compact
+  2×2 action grid, generous whitespace, and an 800 px bottom composer.
+- Product truth: retains only the supported model selector and memory state;
+  removes fake latency, online state, percentages, profiles, integrations,
+  avatars, emoji, and duplicated status information.
+
+Generation prompt summary: preserve the strongest structure of the supplied
+Mira concept while applying the realistic whitespace and interface density of
+the second reference. Keep the approved cobalt/coral ribbon-M identity, exact
+Russian product copy, consistent outline icons, and a light application canvas.
+Avoid browser chrome, oversized presentation UI, human or anime avatars, fake
+metrics, purple AI branding, excessive glow, glassmorphism, and imitation of
+another product's navigation or brand.
+
 ## B — Teal + mint
 
 - Architecture: floating navigation panel + inset conversation sheet.
