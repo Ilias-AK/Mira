@@ -15,8 +15,6 @@
   const modelButton = document.getElementById("modelButton");
   const modelMenu = document.getElementById("modelMenu");
   const modelMode = document.getElementById("modelMode");
-  const connectionPill = document.getElementById("connectionPill");
-  const connectionText = document.getElementById("connectionText");
   const notice = document.getElementById("notice");
   const userTemplate = document.getElementById("userMessageTemplate");
   const assistantTemplate = document.getElementById("assistantMessageTemplate");
@@ -45,11 +43,10 @@
 
   function setConnection(connected, text) {
     state.connected = connected;
-    connectionPill.classList.toggle("offline", !connected);
-    connectionText.textContent = text;
     const local = document.getElementById("localStatus");
-    local.querySelector("strong").textContent = connected ? "Локально" : "Нет связи";
-    local.querySelector("small").textContent = connected ? "без интернета" : "сервер недоступен";
+    local.querySelector(".status-dot").style.background = connected ? "" : "var(--danger)";
+    local.querySelector("strong").textContent = connected ? "Mira готова" : "Нет связи";
+    local.querySelector("small").textContent = connected ? "локальная модель" : "сервер недоступен";
   }
 
   function showNotice(message) {

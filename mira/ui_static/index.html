@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#fbfbfc">
   <meta name="color-scheme" content="light">
   <title>Mira 1.0</title>
-  <link rel="stylesheet" href="/app.css">
+  <link rel="stylesheet" href="/app.css?v=3">
 </head>
 <body>
   <a class="skip-link" href="#composerInput">Перейти к сообщению</a>
@@ -45,8 +45,8 @@
       <div class="local-status" id="localStatus">
         <span class="status-dot" aria-hidden="true"></span>
         <span class="local-status-copy">
-          <strong>Локально</strong>
-          <small>без интернета</small>
+          <strong>Mira готова</strong>
+          <small>локальная модель</small>
         </span>
       </div>
     </aside>
@@ -72,7 +72,7 @@
               </span>
               <span>
                 <strong>Mira 1.0</strong>
-                <small>Собственная модель · офлайн</small>
+                <small>Собственная модель</small>
               </span>
               <span class="check" aria-hidden="true">✓</span>
             </div>
@@ -82,10 +82,6 @@
 
         <div class="topbar-spacer"></div>
 
-        <div class="connection-pill" id="connectionPill" title="Состояние модели">
-          <span class="status-dot" aria-hidden="true"></span>
-          <span id="connectionText">Подключение…</span>
-        </div>
       </header>
 
       <div class="notice" id="notice" role="status" aria-live="polite"></div>
@@ -98,11 +94,20 @@
             </div>
             <p class="eyebrow">Mira 1.0</p>
             <h1>С чего начнём?</h1>
-            <p class="welcome-copy">Можно спросить что угодно — отвечу коротко и по-человечески)</p>
+            <p class="welcome-copy">Спроси что угодно. Отвечу коротко и по-человечески</p>
             <div class="suggestions">
-              <button type="button" data-prompt="Ты больше любишь Астану или Кокшетау?">Астана или Кокшетау?</button>
-              <button type="button" data-prompt="Почему ты выбрала учёт и аудит?">Почему учёт и аудит?</button>
-              <button type="button" data-prompt="Какой кофе ты любишь больше всего?">Какой кофе любишь?</button>
+              <button type="button" data-prompt="Ты больше любишь Астану или Кокшетау?">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                <span>Астана или Кокшетау?</span>
+              </button>
+              <button type="button" data-prompt="Почему ты выбрала учёт и аудит?">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3 9 9-5 9 5-9 5-9-5Z"/><path d="M7 12v5c3 2 7 2 10 0v-5M21 10v6"/></svg>
+                <span>Почему учёт и аудит?</span>
+              </button>
+              <button type="button" data-prompt="Какой кофе ты любишь больше всего?">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 9h12v5a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5V9Z"/><path d="M17 11h1.5a2.5 2.5 0 0 1 0 5H17M8 5c0 1 1 1 1 2M12 5c0 1 1 1 1 2"/></svg>
+                <span>Какой кофе любишь?</span>
+              </button>
             </div>
           </div>
         </section>
@@ -114,11 +119,11 @@
           <span class="character-count" id="characterCount" aria-live="polite"></span>
           <button class="send-button" id="sendButton" type="submit" aria-label="Отправить сообщение" disabled>
             <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M5 12h13M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M12 19V5M6.5 10.5 12 5l5.5 5.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
         </form>
-        <p class="footer-note"><span id="footerModel">Mira 1.0</span> работает локально и может ошибаться</p>
+        <p class="footer-note">Ответы могут быть неточными</p>
       </footer>
     </main>
   </div>
@@ -157,6 +162,6 @@
     </article>
   </template>
 
-  <script src="/app.js" defer></script>
+  <script src="/app.js?v=3" defer></script>
 </body>
 </html>
