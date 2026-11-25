@@ -12,6 +12,8 @@
   const characterCount = document.getElementById("characterCount");
   const newChatButton = document.getElementById("newChatButton");
   const sidebarButton = document.getElementById("sidebarButton");
+  const threadPanelButton = document.getElementById("threadPanelButton");
+  const sidebarCollapseButton = document.getElementById("sidebarCollapseButton");
   const sidebarBackdrop = document.getElementById("sidebarBackdrop");
   const modelButton = document.getElementById("modelButton");
   const modelMenu = document.getElementById("modelMenu");
@@ -33,6 +35,8 @@
     messages: [],
     composing: false,
     noticeTimer: null,
+    sidebarCollapsed: false,
+    sidebarAnimationTimer: null,
   };
 
   async function request(path, options = {}) {
@@ -103,6 +107,35 @@
   function closeSidebar() {
     app.classList.remove("sidebar-open");
     sidebarButton.setAttribute("aria-expanded", "false");
+    if (window.matchMedia("(max-width: 980px)").matches) {
+      threadPanelButton.setAttribute("aria-expanded", "false");
+    }
+  }
+
+  function revealSidebarContent() {
+    clearTimeout(state.sidebarAnimationTimer);
+    app.classList.remove("sidebar-revealing");
+    requestAnimationFrame(() => app.classList.add("sidebar-revealing"));
+    state.sidebarAnimationTimer = setTimeout(() => app.classList.remove("sidebar-revealing"), 650);
+  }
+
+  function setDesktopSidebar(open) {
+    state.sidebarCollapsed = !open;
+    app.classList.toggle("sidebar-collapsed", !open);
+    threadPanelButton.setAttribute("aria-expanded", String(open));
+    sidebarCollapseButton.setAttribute("aria-expanded", String(open));
+    if (open) revealSidebarContent();
+  }
+
+  function toggleThreadPanel() {
+    if (window.matchMedia("(max-width: 980px)").matches) {
+      const open = app.classList.toggle("sidebar-open");
+      sidebarButton.setAttribute("aria-expanded", String(open));
+      threadPanelButton.setAttribute("aria-expanded", String(open));
+      if (open) revealSidebarContent();
+      return;
+    }
+    setDesktopSidebar(state.sidebarCollapsed);
   }
 
   function closeAddMenu() {
@@ -256,7 +289,11 @@
   sidebarButton.addEventListener("click", () => {
     const open = app.classList.toggle("sidebar-open");
     sidebarButton.setAttribute("aria-expanded", String(open));
+    threadPanelButton.setAttribute("aria-expanded", String(open));
+    if (open) revealSidebarContent();
   });
+  threadPanelButton.addEventListener("click", toggleThreadPanel);
+  sidebarCollapseButton.addEventListener("click", () => setDesktopSidebar(false));
   sidebarBackdrop.addEventListener("click", closeSidebar);
   chatScroll.addEventListener("scroll", updateScrollButton, { passive: true });
   scrollBottomButton.addEventListener("click", () => scrollToBottom());
@@ -301,8 +338,22 @@
     }
   });
 
+  window.addEventListener("resize", () => {
+    if (window.matchMedia("(max-width: 980px)").matches) {
+      threadPanelButton.setAttribute("aria-expanded", String(app.classList.contains("sidebar-open")));
+    } else {
+      app.classList.remove("sidebar-open");
+      sidebarButton.setAttribute("aria-expanded", "false");
+      threadPanelButton.setAttribute("aria-expanded", String(!state.sidebarCollapsed));
+    }
+  });
+
   async function init() {
     updateComposer();
+    threadPanelButton.setAttribute(
+      "aria-expanded",
+      String(!window.matchMedia("(max-width: 980px)").matches),
+    );
     try {
       const status = await request("/api/status");
       state.sessionId = status.sessionId;

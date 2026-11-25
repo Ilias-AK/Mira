@@ -73,10 +73,14 @@ def test_ui_status_message_reset_and_static_page():
 
         assert (STATIC_DIR / "assets" / "mira-mark-cobalt.png").read_bytes().startswith(b"\x89PNG")
         assert (STATIC_DIR / "assets" / "fonts" / "Rubik-Variable.ttf").stat().st_size > 300_000
+        assert (STATIC_DIR / "assets" / "fonts" / "GolosText-Variable.ttf").stat().st_size > 150_000
         with urllib.request.urlopen(url + "/assets/fonts/Rubik-Variable.ttf", timeout=4) as font_response:
             assert font_response.status == 200
             assert font_response.headers.get_content_type() == "font/ttf"
             assert font_response.read(4) == b"\x00\x01\x00\x00"
+        with urllib.request.urlopen(url + "/assets/fonts/GolosText-Variable.ttf", timeout=4) as font_response:
+            assert font_response.status == 200
+            assert font_response.headers.get_content_type() == "font/ttf"
 
         status, payload = call(url, "/api/status")
         assert status == 200
@@ -129,10 +133,15 @@ def test_ui_keeps_page_fixed_and_scrolls_only_conversation():
     assert 'id="scrollBottomButton"' in page
     assert 'id="addButton"' in page
     assert 'id="conversationTitle"' in page
+    assert 'id="threadPanelButton"' in page
+    assert 'id="sidebarCollapseButton"' in page
     assert "grid-template-columns: var(--rail-width) var(--sidebar-width) minmax(0, 1fr);" in styles
+    assert ".app.sidebar-collapsed" in styles
+    assert "cubic-bezier(.22, 1, .36, 1)" in styles
     assert "position: fixed;" in styles
     assert "overscroll-behavior: none;" in styles
     assert "overscroll-behavior-y: contain;" in styles
     assert "overflow-y: auto;" in styles
     assert 'chatScroll.addEventListener("scroll", updateScrollButton' in script
     assert 'scrollBottomButton.addEventListener("click"' in script
+    assert 'threadPanelButton.addEventListener("click", toggleThreadPanel)' in script

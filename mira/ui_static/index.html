@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f7f9fd">
   <meta name="color-scheme" content="light">
   <title>Mira 1.0</title>
-  <link rel="stylesheet" href="/app.css?v=7">
+  <link rel="stylesheet" href="/app.css?v=9">
 </head>
 <body>
   <a class="skip-link" href="#composerInput">Перейти к сообщению</a>
@@ -18,7 +18,7 @@
       </button>
 
       <nav class="rail-nav" aria-label="Разделы">
-        <button class="rail-button active" type="button" aria-label="Диалоги" aria-current="page">
+        <button class="rail-button active" id="threadPanelButton" type="button" aria-label="Показать или скрыть диалоги" aria-current="page" aria-expanded="true" aria-controls="sidebar">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5.5 18.5 3 21v-5.3A8.5 8.5 0 0 1 4.5 3h15A1.5 1.5 0 0 1 21 4.5v10a1.5 1.5 0 0 1-1.5 1.5H8.8a8.4 8.4 0 0 1-3.3 2.5Z"/></svg>
         </button>
         <button class="rail-button" type="button" aria-label="Коллекции">
@@ -38,6 +38,9 @@
       <div class="wordmark">
         <img src="/assets/mira-mark-cobalt.png" alt="">
         <span>Mira</span>
+        <button class="sidebar-toggle" id="sidebarCollapseButton" type="button" aria-label="Свернуть диалоги" aria-expanded="true" aria-controls="sidebar">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m14 7-5 5 5 5"/></svg>
+        </button>
       </div>
 
       <button class="new-chat" id="newChatButton" type="button">
@@ -46,7 +49,7 @@
       </button>
 
       <div class="sidebar-section">
-        <p class="section-label">Диалоги</p>
+        <p class="section-label">Недавние</p>
         <nav class="thread-list" aria-label="История диалогов">
           <button class="thread-item active" id="currentThread" type="button" aria-current="page">
             <span id="currentThreadLabel">Новый диалог</span>
@@ -162,6 +165,6 @@
     </article>
   </template>
 
-  <script src="/app.js?v=7" defer></script>
+  <script src="/app.js?v=9" defer></script>
 </body>
 </html>
