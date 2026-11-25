@@ -8,6 +8,7 @@
   const composer = document.getElementById("composer");
   const input = document.getElementById("composerInput");
   const sendButton = document.getElementById("sendButton");
+  const scrollBottomButton = document.getElementById("scrollBottomButton");
   const characterCount = document.getElementById("characterCount");
   const newChatButton = document.getElementById("newChatButton");
   const sidebarButton = document.getElementById("sidebarButton");
@@ -91,7 +92,17 @@
   }
 
   function scrollToBottom(behavior = "smooth") {
-    requestAnimationFrame(() => chatScroll.scrollTo({ top: chatScroll.scrollHeight, behavior }));
+    requestAnimationFrame(() => {
+      chatScroll.scrollTo({ top: chatScroll.scrollHeight, behavior });
+      setTimeout(updateScrollButton, behavior === "smooth" ? 220 : 0);
+    });
+  }
+
+  function updateScrollButton() {
+    const distance = chatScroll.scrollHeight - chatScroll.scrollTop - chatScroll.clientHeight;
+    const visible = state.messages.length > 0 && distance > 140;
+    scrollBottomButton.hidden = !visible;
+    scrollBottomButton.classList.toggle("visible", visible);
   }
 
   function appendUser(text, save = true) {
@@ -220,6 +231,8 @@
     sidebarButton.setAttribute("aria-expanded", String(open));
   });
   sidebarBackdrop.addEventListener("click", closeSidebar);
+  chatScroll.addEventListener("scroll", updateScrollButton, { passive: true });
+  scrollBottomButton.addEventListener("click", () => scrollToBottom());
 
   modelButton.addEventListener("click", () => {
     const open = modelMenu.classList.toggle("open");

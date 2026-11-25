@@ -5,8 +5,12 @@ import threading
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
+from pathlib import Path
 
 from mira.ui import MiraUIApp, create_server
+
+
+STATIC_DIR = Path(__file__).resolve().parents[1] / "mira" / "ui_static"
 
 
 @dataclass
@@ -104,3 +108,18 @@ def test_ui_rejects_empty_and_long_messages():
         server.shutdown()
         server.server_close()
         thread.join(timeout=3)
+
+
+def test_ui_keeps_page_fixed_and_scrolls_only_conversation():
+    page = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
+    styles = (STATIC_DIR / "app.css").read_text(encoding="utf-8")
+    script = (STATIC_DIR / "app.js").read_text(encoding="utf-8")
+
+    assert 'id="chatScroll"' in page
+    assert 'id="scrollBottomButton"' in page
+    assert "position: fixed;" in styles
+    assert "overscroll-behavior: none;" in styles
+    assert "overscroll-behavior-y: contain;" in styles
+    assert "overflow-y: auto;" in styles
+    assert 'chatScroll.addEventListener("scroll", updateScrollButton' in script
+    assert 'scrollBottomButton.addEventListener("click"' in script

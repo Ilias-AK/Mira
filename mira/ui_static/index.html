@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#fbfbfc">
   <meta name="color-scheme" content="light">
   <title>Mira 1.0</title>
-  <link rel="stylesheet" href="/app.css?v=3">
+  <link rel="stylesheet" href="/app.css?v=4">
 </head>
 <body>
   <a class="skip-link" href="#composerInput">Перейти к сообщению</a>
@@ -113,6 +113,12 @@
         </section>
       </div>
 
+      <button class="scroll-bottom-button" id="scrollBottomButton" type="button" aria-label="К последнему сообщению" hidden>
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="m7 10 5 5 5-5"/>
+        </svg>
+      </button>
+
       <footer class="composer-shell">
         <form class="composer" id="composer">
           <textarea id="composerInput" rows="1" maxlength="500" placeholder="Спросить Mira…" aria-label="Сообщение Mira"></textarea>
@@ -162,6 +168,6 @@
     </article>
   </template>
 
-  <script src="/app.js?v=3" defer></script>
+  <script src="/app.js?v=4" defer></script>
 </body>
 </html>
