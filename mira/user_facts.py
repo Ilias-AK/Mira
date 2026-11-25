@@ -13,11 +13,11 @@ PET_NAME = re.compile(r"(?:мо(?:его|ю|й|я|ему|им)|у меня|на�
 PET_NAME_REVERSED = re.compile(r"(?:зовут|кличка)\s+([А-ЯЁ][а-яё\-]+)[^.!?,]{0,20}?\b(?:мо(?:его|ю|й|я)|у меня)\s+" + PETS, re.IGNORECASE)
 ORIGIN = re.compile(r"(?:\bя\s+(?:сам[аи]?\s+)?(?:из|родом из|родилс[яь] в|родилась в)|\bродом\s+из|\bродил(?:ся|ась)\s+в)\s+([А-ЯЁ][а-яё\-]+(?:\s+[А-ЯЁ][а-яё\-]+)?)", re.IGNORECASE)
 LIVES = re.compile(r"\bя\s+(?:сейчас\s+)?живу\s+в\s+([А-ЯЁ][а-яё\-]+)", re.IGNORECASE)
-STUDIES = re.compile(r"\bучусь\s+((?:в|на)\s+([А-ЯЁ][а-яё\-]+|[а-яё\-]+(?:\s+[а-яё\-]+)?))", re.IGNORECASE)
+STUDIES = re.compile(r"\bучусь\s+((?:в|на)\s+(?:[А-ЯЁA-Z][\wё\-]*|[а-яё\-]+)(?:\s+(?:на|в)\s+[а-яё\-]+|\s+[а-яё\-]+)?)", re.IGNORECASE)
 WORKS = re.compile(r"\bработаю\s+([а-яё\-]+(?:\s+[а-яё\-]+){0,3})", re.IGNORECASE)
 AGE = re.compile(r"\bмне\s+(\d{1,2})\s*(?:год|года|лет)?\b", re.IGNORECASE)
-LIKES = re.compile(r"\bя\s+(?:очень\s+)?(?:люблю|обожаю)\s+([^.,!?]{2,40})", re.IGNORECASE)
-DISLIKES = re.compile(r"\bя\s+(?:вот\s+)?(?:не\s+люблю|терпеть\s+не\s+могу|ненавижу)\s+([^.,!?]{2,40})", re.IGNORECASE)
+LIKES = re.compile(r"\bя\s+(?:очень\s+)?(?:люблю|обожаю)\s+((?:(?!\s+(?:и|а|но)\s+(?:не\s+люблю|ненавижу|терпеть))[^.,!?]){2,40})", re.IGNORECASE)
+DISLIKES = re.compile(r"\b(?:я|и|а|но)\s+(?:вот\s+)?(?:не\s+люблю|терпеть\s+не\s+могу|ненавижу)\s+([^.,!?]{2,40})", re.IGNORECASE)
 
 ASK_PET = re.compile(r"\b(?:как|помнишь)\b[^?]*\bзовут\b[^?]*\bмо(?:его|ю|й|я)\b\s+" + PETS +
                      r"|\bкличк\w*\b[^?]*\bмо(?:его|ю|й|я)\b\s+" + PETS +
@@ -29,6 +29,7 @@ ASK_WORK = re.compile(r"\bгде\s+я\s+работаю\b|\bкем\s+я\s+раб�
 ASK_AGE = re.compile(r"\bсколько\s+мне\s+лет\b", re.IGNORECASE)
 ASK_LIKES = re.compile(r"\bчто\s+я\s+(?:люблю|обожаю)\b", re.IGNORECASE)
 ASK_DISLIKES = re.compile(r"\bчто\s+я\s+(?:не\s+люблю|ненавижу|терпеть\s+не\s+могу)\b", re.IGNORECASE)
+ASK_SUMMARY = re.compile(r"\bчто\s+(?:ты\s+)?(?:знаешь|помнишь|запомнила)\s+(?:обо\s+мне|про\s+меня)\b|\bчто\s+(?:ты\s+)?(?:обо\s+мне|про\s+меня)\s+(?:знаешь|помнишь|запомнила)\b|\bрасскажи\s+(?:обо\s+мне|про\s+меня)\b|\bчто\s+я\s+(?:о\s+себе\s+)?(?:рассказал\w*|говорил\w*)\s*\??$", re.IGNORECASE)
 
 COLOR = re.compile(r"(?i:мой\s+любимый\s+цвет|любимый\s+цвет\s+у\s+меня)\s*[-—:]?\s*(?:это\s+)?([а-яёА-ЯЁ]+)")
 ASK_COLOR = re.compile(r"\bкакой\s+(?:я\s+)?цвет\s+(?:я\s+)?люблю\b|\bмой\s+любимый\s+цвет\s*\?|\bкакой\s+у\s+меня\s+любимый\s+цвет\b", re.IGNORECASE)
@@ -50,7 +51,7 @@ def from_city(value):
 USER_NAME = re.compile(r"(?i:меня\s+зовут|зовут\s+меня|мо[её]\s+имя|зови\s+меня|называй\s+меня|можно\s+просто)\s*[-—:]?\s*(?:это\s+)?([А-ЯЁ][а-яё]+|[а-яё]{3,}(?=\W*$))")
 NOT_NAMES = {"так", "просто", "никак", "все", "всё", "это", "тоже", "типа", "вообще", "как", "кто", "что"}
 USER_NAME_SHORT = re.compile(r"(?i:знакомиться|знакомы|познакомимся)\W+я\s+([А-ЯЁ][а-яё]+)|^\W*(?i:я)\s+([А-ЯЁ][а-яё]+)\W*$")
-STUDY_CITY = re.compile(r"(?i:учусь)\b[^.!?]{0,40}?\b(?i:в)\s+([А-ЯЁ][а-яё]+)")
+STUDY_CITY = re.compile(r"(?i:учусь)\b[^.!?]{0,40}?\b(?i:в)\s+([А-ЯЁ][а-яё]+)(?![\wА-ЯЁ])")
 ASK_STUDY_CITY = re.compile(r"\bв\s+каком\s+городе\s+я\s+учусь\b|\bгде\s+я\s+учусь\b", re.IGNORECASE)
 DEFINE = re.compile(r"(?i:запомни|запиши|знай|кстати)?\W*(?i:слово|термин)?\W*[«\"']?([а-яёa-z-]{2,})[»\"']?\s*(?:[-—:]\s*(?:это\s+)?(?:значит\s+|означает\s+)?|\s+(?:это\s+(?:значит|означает|когда)|это|значит|означает)\s+)(.{2,160}?)\s*[.!]?$")
 MEMO = re.compile(r"^\W*(?i:запомни|запиши|не\s+забудь)\W*(?:(?i:что)\s+)?(.{2,160}?)\s*[.!]?$")
@@ -152,8 +153,35 @@ class UserFacts:
             return options[len(self.facts["memos"]) % len(options)]
         return None
 
+    def summary(self):
+        """Everything the user told about themselves, in one short message (or None)."""
+        f, parts = self.facts, []
+        if f.get("name"):
+            parts.append(f"тебя зовут {f['name']}")
+        if f.get("age"):
+            parts.append(f"тебе {f['age']}")
+        if f.get("origin"):
+            parts.append(f"ты из {f['origin']}")
+        if f.get("studies"):
+            parts.append(f"учишься {f['studies']}")
+        if f.get("works"):
+            parts.append(f"работаешь {f['works']}")
+        for kind, name in (f.get("pets") or {}).items():
+            word = {"кот": "кот", "кош": "кошка", "соб": "собака", "пес": "пёс", "пёс": "пёс", "хом": "хомяк", "поп": "попугай"}.get(kind, "питомец")
+            parts.append(f"у тебя {word} {name}")
+        if f.get("color"):
+            parts.append(f"любимый цвет {f['color']}")
+        if f.get("likes"):
+            parts.append("любишь " + f["likes"][0])
+        if not parts:
+            return None
+        text = ", ".join(parts[:7])
+        return text[:1].upper() + text[1:] + ". Пока всё, что успел{|а} рассказать)"
+
     def recall(self, question):
         q = str(question)
+        if ASK_SUMMARY.search(q):
+            return self.summary() or "Пока почти ничего, ты о себе не рассказывал{|а})"
         definitions = self.facts.get("definitions", {})
         if definitions:
             match = ASK_DEF.search(q)

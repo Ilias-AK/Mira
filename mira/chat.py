@@ -13,6 +13,9 @@ HERE = Path(__file__).resolve().parents[1]
 
 def build(args):
     from mira.runtime import MiraRuntime
+    if args.config_dir:   # a whole runtime profile, e.g. config/candidate_v2
+        base = Path(args.config_dir)
+        args.persona, args.bank, args.fallbacks = str(base / "persona.json"), str(base / "bank.json"), str(base / "fallbacks.json")
     return MiraRuntime(args.persona, args.bank, args.fallbacks, args.index if args.retrieval else None,
                        use_retrieval=args.retrieval, mode="chat" if args.chat else "hall",
                        seed=args.seed if args.seed is not None else random.randrange(10 ** 6),
@@ -40,6 +43,7 @@ def parser():
     p.add_argument("--no-intent", action="store_true", help="rules only")
     p.add_argument("--chat", action="store_true", help="casual messenger style instead of the contest (hall) style")
     p.add_argument("--no-log-misses", action="store_true", help="do not write runs/mira/misses.jsonl")
+    p.add_argument("--config-dir", help="profile folder with persona/bank/team_qa/fallbacks json (default: config/)")
     p.add_argument("--question")
     return p
 

@@ -245,6 +245,8 @@ class Generic:
             if norm(value).startswith("на "):
                 went = "пошла" if facts_after.get("_gender") == "f" else "пошёл"
                 parts.append(f"А почему тогда {went} {value}?" if re.search(r"\bхочу\b", norm(question)) else f"О, {value}) Нравится?")
+            elif re.search(r"\sна\s", value):
+                parts.append(f"О, {value}. А я в ЕНУ, на учёте и аудите)")
             else:
                 parts.append("А на кого учишься?")
         elif "origin" in new and len(parts) < 2:

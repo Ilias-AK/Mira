@@ -300,6 +300,9 @@ class MiraRuntime:
         follow = self._followup_reply(original)
         if follow:
             return follow
+        told = self._reaction_to_user_fact(original)
+        if told:
+            return told
         fav = self.generic.favorite(question, self.seed)
         short = re.match(r"^\W*(?:ну\s+)?а\s+([а-яё]+(?:\s+[а-яё]+)?)\W*$", norm(question))
         if not fav and short and self.topics and self.topics[-1] in ("favorite", "football", "anime"):
@@ -448,6 +451,8 @@ class MiraRuntime:
         predicted = self._predict(text)
         agrees = predicted is not None and predicted[0] == item["id"] and predicted[1] >= 0.35
         need = 0.55 if item.get("after") else 0.62
+        if item.get("source") == "retrieval_v2":
+            need = 0.75   # new_topics: only near-exact matches, never as a guess
         content_words = [w for w in re.findall(r"[а-яё]+", to_ty(text)) if len(w) > 2]
         if len(content_words) < 2:
             need = max(need, 0.9)    # one word ("шарага?") is too little to recognise a topic
@@ -509,6 +514,28 @@ class MiraRuntime:
         self._pending_pin = key
         self._keep_question = bool(item.get("ask"))
         return choice, f"model:{item['id']}", item.get("topic")
+
+    def _reaction_to_user_fact(self, text):
+        """The user shares something about themselves: react to it instead of answering a question nobody asked."""
+        if "?" in text:
+            return None
+        q = norm(text)
+        mine = re.match(r"^\W*(?:а\s+)?(?:мой|моя|мое|мои)\s+(?:самы[йяе]\s+)?любим\w*\s+([а-я]+)\s*[-—:]?\s*(?:это\s+)?(.+?)\W*$", q)
+        if mine:
+            hers = self.generic.favorite(f"какой твой любимый {mine.group(1)}?", self.seed)
+            if hers:
+                theirs = mine.group(2)
+                hers_clean = re.sub(r"(?i)^(?:сейчас|наверное|наверно)\s+", "", hers.strip().rstrip(".")).strip()
+                if theirs[:4] and theirs[:4] in norm(hers_clean):
+                    return "О, у меня тоже!", "user_fact", "favorite"
+                return f"Хороший выбор. А у меня {hers_clean}", "user_fact", "favorite"
+        pet = re.match(r"^\W*(?:а\s+)?у\s+меня\s+(?:есть\s+)?(кот|кошка|котик|собака|пес|щенок|хомяк|попугай)\w*\s+(?:по\s+имени\s+|зовут\s+)?([а-я]{2,})\W*$", q)
+        if pet:
+            name = pet.group(2).capitalize()
+            if pet.group(1).startswith("ко"):
+                return f"О, котик! {name} — классное имя. У моих родителей тоже кошка, Мурка", "user_fact", "pets"
+            return f"{name} — классное имя. А у моих родителей кошка Мурка", "user_fact", "pets"
+        return None
 
     def _topic_fallback(self, question):
         """Last resort that still answers *about* what was asked, in the asker's own words."""
@@ -749,6 +776,10 @@ class MiraRuntime:
                                     "id": best[2].get("id")})
             elif best:
                 diagnostics["best_rejected_score"] = round(best[0], 3)
+        if text is None and self.dialog.user:
+            remembered = self.dialog.recall_user(question, self._formal(question), relaxed=True)
+            if remembered and not remembered.startswith(("Вы мне этого", "Ты мне этого")):
+                text, route, topic = remembered, "user_memory", "user_memory"
         if text is None:
             topical = self._topic_fallback(question)
             if topical:
