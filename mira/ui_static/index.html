@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f7f9fd">
   <meta name="color-scheme" content="light">
   <title>Mira 1.0</title>
-  <link rel="stylesheet" href="/app.css?v=9">
+  <link rel="stylesheet" href="/app.css?v=10">
 </head>
 <body>
   <a class="skip-link" href="#composerInput">Перейти к сообщению</a>
@@ -72,7 +72,6 @@
           <span></span><span></span><span></span>
         </button>
 
-        <h1 class="conversation-title" id="conversationTitle">Новый диалог</h1>
         <div class="model-picker">
           <button class="model-button" id="modelButton" type="button" aria-expanded="false" aria-controls="modelMenu">
             <span>Mira 1.0</span>
@@ -87,6 +86,7 @@
             </button>
           </div>
         </div>
+        <h1 class="conversation-title" id="conversationTitle">Новый диалог</h1>
         <div class="topbar-spacer"></div>
       </header>
 
@@ -95,10 +95,30 @@
       <div class="chat-scroll" id="chatScroll">
         <section class="conversation" id="conversation" aria-label="Диалог с Mira">
           <div class="welcome" id="welcome">
-            <img class="welcome-mark" src="/assets/mira-mark-cobalt.png" alt="">
-            <p class="welcome-kicker">Mira 1.0</p>
+            <div class="welcome-identity" aria-hidden="true">
+              <span></span><span></span><span></span>
+              <img class="welcome-mark" src="/assets/mira-mark-cobalt.png" alt="">
+            </div>
             <h2>Ну что, поговорим?</h2>
             <p class="welcome-copy">Пиши как есть. Я тоже без официоза)</p>
+            <div class="welcome-actions" aria-label="Быстрый старт">
+              <button class="welcome-action" type="button" data-fill-prompt="Запомни обо мне важное из нашего разговора">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.8A1.8 1.8 0 0 1 7.8 3h8.4A1.8 1.8 0 0 1 18 4.8V21l-6-3.8L6 21V4.8Z"/><path class="accent" d="m9 12 2 2 4-4"/></svg>
+                <span><strong>Запомни меня</strong><small>Сохраню важное из разговора</small></span>
+              </button>
+              <button class="welcome-action" type="button" data-fill-prompt="Помоги мне разобрать мою идею">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7L12 3Z"/><path class="accent" d="M18 3v3M21 6h-3"/></svg>
+                <span><strong>Разбери мою идею</strong><small>Помогу разложить всё по полочкам</small></span>
+              </button>
+              <button class="welcome-action" type="button" data-fill-prompt="Давай проведём Тьюринг-баттл">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5.5h11A2.5 2.5 0 0 1 17.5 8v6A2.5 2.5 0 0 1 15 16.5H9L5 20v-3.5H4A2.5 2.5 0 0 1 1.5 14V8A2.5 2.5 0 0 1 4 5.5Z"/><path class="accent" d="M10 10.5h10A2.5 2.5 0 0 1 22.5 13v4A2.5 2.5 0 0 1 20 19.5h-1V22l-3-2.5h-6A2.5 2.5 0 0 1 7.5 17v-.5"/></svg>
+                <span><strong>Тьюринг-баттл</strong><small>Проверим меня на человечность</small></span>
+              </button>
+              <button class="welcome-action" type="button" data-fill-prompt="Ответь коротко на мой вопрос">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m13.2 2-8 11h6L10.8 22l8-11h-6l.4-9Z"/></svg>
+                <span><strong>Быстрый вопрос</strong><small>Отвечу коротко и по делу</small></span>
+              </button>
+            </div>
           </div>
         </section>
       </div>
@@ -165,6 +185,6 @@
     </article>
   </template>
 
-  <script src="/app.js?v=9" defer></script>
+  <script src="/app.js?v=10" defer></script>
 </body>
 </html>
