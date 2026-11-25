@@ -66,11 +66,17 @@ def test_ui_status_message_reset_and_static_page():
         status, page = call(url, "/")
         assert status == 200
         assert "Mira 1.0" in page
-        assert "С чего начнём?" in page
+        assert "Ну что, поговорим?" in page
         assert "Локальная модель" not in page
         assert "mira-mark-cobalt.png" in page
+        assert "Астана или Кокшетау?</button>" not in page
 
         assert (STATIC_DIR / "assets" / "mira-mark-cobalt.png").read_bytes().startswith(b"\x89PNG")
+        assert (STATIC_DIR / "assets" / "fonts" / "Rubik-Variable.ttf").stat().st_size > 300_000
+        with urllib.request.urlopen(url + "/assets/fonts/Rubik-Variable.ttf", timeout=4) as font_response:
+            assert font_response.status == 200
+            assert font_response.headers.get_content_type() == "font/ttf"
+            assert font_response.read(4) == b"\x00\x01\x00\x00"
 
         status, payload = call(url, "/api/status")
         assert status == 200

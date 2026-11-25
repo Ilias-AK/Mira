@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f7f9fd">
   <meta name="color-scheme" content="light">
   <title>Mira 1.0</title>
-  <link rel="stylesheet" href="/app.css?v=6">
+  <link rel="stylesheet" href="/app.css?v=7">
 </head>
 <body>
   <a class="skip-link" href="#composerInput">Перейти к сообщению</a>
@@ -70,8 +70,6 @@
         </button>
 
         <h1 class="conversation-title" id="conversationTitle">Новый диалог</h1>
-        <div class="topbar-spacer"></div>
-
         <div class="model-picker">
           <button class="model-button" id="modelButton" type="button" aria-expanded="false" aria-controls="modelMenu">
             <span>Mira 1.0</span>
@@ -86,6 +84,7 @@
             </button>
           </div>
         </div>
+        <div class="topbar-spacer"></div>
       </header>
 
       <div class="notice" id="notice" role="status" aria-live="polite"></div>
@@ -94,13 +93,9 @@
         <section class="conversation" id="conversation" aria-label="Диалог с Mira">
           <div class="welcome" id="welcome">
             <img class="welcome-mark" src="/assets/mira-mark-cobalt.png" alt="">
-            <h2>С чего начнём?</h2>
-            <p>Можно спросить что угодно. Отвечу коротко и по-человечески)</p>
-            <div class="suggestions">
-              <button type="button" data-prompt="Ты больше любишь Астану или Кокшетау?">Астана или Кокшетау?</button>
-              <button type="button" data-prompt="Почему ты выбрала учёт и аудит?">Почему учёт и аудит?</button>
-              <button type="button" data-prompt="Какой кофе ты любишь больше всего?">Какой кофе любишь?</button>
-            </div>
+            <p class="welcome-kicker">Mira 1.0</p>
+            <h2>Ну что, поговорим?</h2>
+            <p class="welcome-copy">Пиши как есть. Я тоже без официоза)</p>
           </div>
         </section>
       </div>
@@ -127,7 +122,7 @@
             </div>
           </div>
 
-          <textarea id="composerInput" rows="1" maxlength="500" placeholder="Спросить Mira..." aria-label="Сообщение Mira"></textarea>
+          <textarea id="composerInput" rows="1" maxlength="500" placeholder="Напиши что-нибудь…" aria-label="Сообщение Mira"></textarea>
           <span class="character-count" id="characterCount" aria-live="polite"></span>
           <button class="send-button" id="sendButton" type="submit" aria-label="Отправить сообщение" disabled>
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m4 12 15-7-4 14-3.2-5.2L4 12Z"/><path d="m11.8 13.8 3.6-4"/></svg>
@@ -167,6 +162,6 @@
     </article>
   </template>
 
-  <script src="/app.js?v=6" defer></script>
+  <script src="/app.js?v=7" defer></script>
 </body>
 </html>

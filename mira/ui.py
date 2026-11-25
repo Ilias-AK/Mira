@@ -137,6 +137,7 @@ class MiraRequestHandler(BaseHTTPRequestHandler):
         "/app.js": ("app.js", "text/javascript; charset=utf-8"),
         "/assets/mira-logo.png": ("assets/mira-logo.png", "image/png"),
         "/assets/mira-mark-cobalt.png": ("assets/mira-mark-cobalt.png", "image/png"),
+        "/assets/fonts/Rubik-Variable.ttf": ("assets/fonts/Rubik-Variable.ttf", "font/ttf"),
     }
 
     def do_GET(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler API
