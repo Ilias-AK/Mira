@@ -24,6 +24,25 @@ state, and a pinned composer. Avoid ChatGPT structure, pink/purple, decorative
 cards, avatars, page scrolling, duplicate statuses, and unsupported upload
 controls.
 
+### A v2 — realistic full-screen scale
+
+- File: `interface-a-cobalt-coral-v2-realistic.png`.
+- Framing: full 16:9 desktop application at normal viewing scale, with the
+  complete app shell visible rather than a presentation close-up.
+- Proportions: approximately 64 px global rail, 236 px conversation pane,
+  64 px header, and an 800 px centered transcript/composer column.
+- Composer: compact pinned field with a standalone plus action on the left.
+- Removed: every local-model/status label, green availability indicator,
+  bottom status card, attachment control, and duplicate model information.
+
+Generation prompt summary: retain direction A's cobalt/coral identity and
+dual-pane architecture while reducing the apparent UI scale by roughly one
+third. Use the real Mira screenshot only as a density and full-viewport
+reference. Keep a single `Mira 1.0` selector, render a short conversation and
+thinking state, preserve intentional whitespace, and avoid cropping, browser
+chrome, oversized type, avatars, upload controls, status copy, and decorative
+marketing content.
+
 ## B — Teal + mint
 
 - Architecture: floating navigation panel + inset conversation sheet.
