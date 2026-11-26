@@ -73,7 +73,42 @@ def to_ty(text: str) -> str:
             elif re.search(r"[аеиыяу]лись$", w) and "вы" in words[max(0, i - 6):i]:
                 w = w[:-3] + "ась"
         out.append(w)
-    return "".join(out)
+    return _feminine("".join(out))
+
+
+# The host reads one wording to all three screens, often in the masculine ("что бы ты посоветовал",
+# "что ты ответил"), while the bank patterns are written for Mira ("посоветовала", "ответила").
+_MASC_PAST = re.compile(r"^([а-я]*?)(шел|[аеиуыя]л|мог)(ся)?$")
+_STOP_SUBJECT = {"я", "он", "она", "оно", "мы", "вы", "они", "кто", "который", "которая", "мама", "папа", "друг"}
+_NOT_VERBS_L = {"сериал", "канал", "журнал", "зал", "финал", "пенал", "материал", "идеал", "генерал", "вокзал", "кинозал",
+                "фестивал", "интервал", "минерал", "карнавал", "капитал", "скандал", "бокал", "овал", "крокодил", "аул",
+                "стул", "котел", "орел", "осел", "козел", "пепел", "тыл", "пыл", "мул", "гул", "шакал", "персонал", "сигнал",
+                "арсенал", "оригинал", "портал", "подвал", "провал", "идеал", "штурвал", "самосвал", "фингал", "тюл"}
+
+
+def _feminine(q):
+    """'что ты ел' -> 'что ты ела': the first past-tense verb within four words after 'ты', up to punctuation."""
+    q = re.sub(r"\bты\s+сам\b", "ты сама", q)
+    parts = re.split(r"(\W+)", q)      # words at even indexes, separators at odd ones
+    i = 0
+    while i < len(parts):
+        if parts[i] != "ты":
+            i += 2
+            continue
+        j, seen = i + 2, 0
+        while j < len(parts) and seen < 4 and not re.search(r"[,.!?;:—()]", parts[j - 1]):
+            word = parts[j]
+            if word in _STOP_SUBJECT:
+                break
+            m = _MASC_PAST.match(word)
+            if m and word not in _NOT_VERBS_L and len(word) >= 2:
+                stem, end, refl = m.groups()
+                word = stem + "шла" if end == "шел" else word[:len(word) - (2 if refl else 0)] + ("ла" if end == "мог" else "а")
+                parts[j] = word + ("сь" if refl else "")
+                break
+            j, seen = j + 2, seen + 1
+        i = j
+    return "".join(parts)
 
 
 VY_PRONOUNS = {"ты": "вы", "тебя": "вас", "тебе": "вам", "тобой": "вами", "твой": "ваш", "твоя": "ваша", "твое": "ваше",
