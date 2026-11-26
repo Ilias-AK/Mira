@@ -1,0 +1,21 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-11-25T12:00:00Z" },
+  "title": "Mira Chat Design",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 1440, "h": 900, "title": "Десктоп — новый чат (кликабельный)", "expand": "fill", "is_interactive": true },
+    "Chat.dc.html": { "x": 1520, "y": 0, "w": 1440, "h": 1120, "title": "Десктоп — диалог, светлая тема", "expand": "fill" },
+    "ChatDark.dc.html": { "x": 3040, "y": 0, "w": 1440, "h": 1120, "title": "Десктоп — код и генерация, тёмная тема", "expand": "fill" },
+    "MobileEmpty.dc.html": { "x": 0, "y": 1240, "w": 390, "h": 844, "title": "iPhone — новый чат" },
+    "MobileChat.dc.html": { "x": 470, "y": 1240, "w": 390, "h": 844, "title": "iPhone — диалог и память" },
+    "Logo.dc.html": { "x": 940, "y": 1240, "w": 1440, "h": 980, "title": "Логотип — 4 варианта" },
+    "Foundations.dc.html": { "x": 2460, "y": 1240, "w": 1440, "h": 1200, "title": "Основа — цвет, шрифт, компоненты" }
+  },
+  "order": ["Main.dc.html", "Chat.dc.html", "ChatDark.dc.html", "MobileEmpty.dc.html", "MobileChat.dc.html", "Logo.dc.html", "Foundations.dc.html"],
+  "notes": {
+    "title": { "x": 0, "y": -300, "text": "Mira — интерфейс диалога с ИИ", "kind": "title1", "maxW": 4480 }
+  },
+  "designSystems": []
+}

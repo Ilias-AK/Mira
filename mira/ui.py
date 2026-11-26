@@ -24,6 +24,58 @@ MODEL_NAME = "Mira 1.0"
 MAX_REQUEST_BYTES = 64 * 1024
 MAX_QUESTION_CHARACTERS = 500
 
+MEMORY_LABELS = {
+    "name": "Имя",
+    "age": "Возраст",
+    "origin": "Родом из",
+    "lives": "Живёт в",
+    "place": "Учится в городе",
+    "studies": "Учёба",
+    "works": "Работа",
+    "color": "Любимый цвет",
+    "likes": "Любит",
+    "dislikes": "Не любит",
+    "pets": "Питомцы",
+    "definitions": "Слова",
+    "memos": "Просили запомнить",
+}
+PET_KINDS = (
+    ("кош", "кошка"), ("кот", "кот"), ("пс", "пёс"), ("пёс", "пёс"), ("пес", "пёс"), ("соб", "собака"),
+    ("щен", "щенок"), ("хом", "хомяк"), ("поп", "попугай"), ("чер", "черепаха"), ("кры", "крыса"), ("рыб", "рыбка"),
+)
+
+
+def pet_kind(key: str) -> str:
+    """UserFacts stores a pet under the first letters of its kind ('кош', 'соб', …)."""
+    return next((name for prefix, name in PET_KINDS if str(key).startswith(prefix)), str(key))
+
+
+def memory_items(facts: dict) -> list[dict]:
+    """Turn ``UserFacts.facts`` into readable rows for the «Память» window."""
+    items: list[dict] = []
+    for key, value in facts.items():
+        if key.startswith("_") or value in (None, "", [], {}):
+            continue
+        label = MEMORY_LABELS.get(key, key.replace("_", " ").capitalize())
+        if key == "pets" and isinstance(value, dict):
+            text = ", ".join(f"{pet_kind(kind)} {name}" for kind, name in value.items())
+        elif key == "definitions" and isinstance(value, dict):
+            for word, meaning in value.items():
+                items.append({"label": f"Слово «{word}»", "value": str(meaning)})
+            continue
+        elif key == "memos" and isinstance(value, list):
+            for memo in value:
+                items.append({"label": label, "value": str(memo)})
+            continue
+        elif isinstance(value, (list, tuple, set)):
+            text = ", ".join(str(v) for v in value)
+        elif isinstance(value, dict):
+            text = ", ".join(f"{k}: {v}" for k, v in value.items())
+        else:
+            text = str(value)
+        items.append({"label": label, "value": text})
+    return items
+
 
 def build_runtime(args: argparse.Namespace):
     from mira.runtime import MiraRuntime
@@ -73,7 +125,9 @@ class MiraUIApp:
 
         started = time.monotonic()
         with self.lock:
+            memory_before = self._memory_snapshot()
             result = self.runtime.answer(message)
+            memory_updated = self._memory_snapshot() != memory_before
             if result.route.startswith("fallback") and self.log_misses:
                 self._log_miss(message, result.text, result.route)
             if self.typing_delay:
@@ -88,7 +142,27 @@ class MiraUIApp:
             "seconds": result.seconds,
             "totalSeconds": round(time.monotonic() - started, 3),
             "characters": len(result.text),
+            "memoryUpdated": memory_updated,
         }
+
+    def memory(self) -> dict:
+        with self.lock:
+            facts = self._facts()
+            items = memory_items(facts) if facts else []
+        return {"ok": True, "items": items}
+
+    def _facts(self) -> dict | None:
+        facts = getattr(getattr(self.runtime, "facts", None), "facts", None)
+        return facts if isinstance(facts, dict) else None
+
+    def _memory_snapshot(self) -> str:
+        facts = self._facts()
+        if not facts:
+            return ""
+        try:
+            return json.dumps(facts, ensure_ascii=False, sort_keys=True, default=str)
+        except (TypeError, ValueError):
+            return ""
 
     def reset(self) -> dict:
         with self.lock:
@@ -135,16 +209,26 @@ class MiraRequestHandler(BaseHTTPRequestHandler):
         "/index.html": ("index.html", "text/html; charset=utf-8"),
         "/app.css": ("app.css", "text/css; charset=utf-8"),
         "/app.js": ("app.js", "text/javascript; charset=utf-8"),
-        "/assets/mira-logo.png": ("assets/mira-logo.png", "image/png"),
-        "/assets/mira-mark-cobalt.png": ("assets/mira-mark-cobalt.png", "image/png"),
-        "/assets/fonts/Rubik-Variable.ttf": ("assets/fonts/Rubik-Variable.ttf", "font/ttf"),
-        "/assets/fonts/GolosText-Variable.ttf": ("assets/fonts/GolosText-Variable.ttf", "font/ttf"),
+        "/manifest.webmanifest": ("manifest.webmanifest", "application/manifest+json; charset=utf-8"),
+        "/favicon.ico": ("assets/favicon-32.png", "image/png"),
+        "/assets/favicon.svg": ("assets/favicon.svg", "image/svg+xml"),
+        "/assets/favicon-32.png": ("assets/favicon-32.png", "image/png"),
+        "/assets/apple-touch-icon.png": ("assets/apple-touch-icon.png", "image/png"),
+        "/assets/icon-192.png": ("assets/icon-192.png", "image/png"),
+        "/assets/icon-512.png": ("assets/icon-512.png", "image/png"),
+        "/assets/mira-mark.svg": ("assets/mira-mark.svg", "image/svg+xml"),
+        "/assets/fonts/inter-cyrillic.woff2": ("assets/fonts/inter-cyrillic.woff2", "font/woff2"),
+        "/assets/fonts/inter-latin.woff2": ("assets/fonts/inter-latin.woff2", "font/woff2"),
+        "/assets/fonts/LICENSE-Inter-OFL.txt": ("assets/fonts/LICENSE-Inter-OFL.txt", "text/plain; charset=utf-8"),
     }
 
     def do_GET(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler API
         path = urlsplit(self.path).path
         if path == "/api/status":
             self._send_json(HTTPStatus.OK, self.server.app.status())
+            return
+        if path == "/api/memory":
+            self._send_json(HTTPStatus.OK, self.server.app.memory())
             return
         item = self.STATIC.get(path)
         if item is None:

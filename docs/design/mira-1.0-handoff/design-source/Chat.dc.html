@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Mira — диалог</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&amp;family=Inter+Tight:wght@500..700&amp;display=swap">
+<style>
+body{margin:0;background:#FFFFFF}
+a{color:#1F3BD6}a:hover{color:#152CA8}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid #1F3BD6;outline-offset:2px}
+.ib{display:grid;place-items:center;border:0;background:transparent;color:#5C5F67;border-radius:10px;cursor:pointer;transition:background .15s ease,color .15s ease}
+.ib:hover{background:#EDEDF0;color:#0E0F12}
+.row{transition:background .15s ease}
+.row:hover{background:#EDEDF0}
+.sugg:hover{background:#F7F7F8;border-color:#D9D9DE}
+textarea{font:inherit}
+textarea::placeholder{color:#73767E}
+textarea:focus{outline:none}
+.prose li::marker{color:#6B6E76}
+@media (max-width:860px){.side{height:auto !important;flex-basis:100% !important;border-right:0 !important;border-bottom:1px solid #E9E9EC}.side-hide{display:none !important}}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 100vh; display: flex; flex-wrap: wrap; background: #FFFFFF; color: #0E0F12; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased">
+
+  <aside class="side" aria-label="Чаты" style="flex: 1 1 272px; height: 100vh; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px; padding: 10px 10px 12px; background: #F7F7F8; border-right: 1px solid #E9E9EC">
+    <div style="height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 4px 0 8px">
+      <svg width="26" height="26" viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M10 50V31a11 11 0 0 1 22 0a11 11 0 0 1 22 0V50" stroke="#1F3BD6" stroke-width="9" stroke-linejoin="round"></path><circle cx="32" cy="44" r="5" fill="#FF5A4E"></circle></svg>
+      <span style="font-family: 'Inter Tight', 'Inter', sans-serif; font-size: 19px; font-weight: 650; letter-spacing: -0.03em">Mira</span>
+      <span style="flex: 1"></span>
+      <button class="ib" type="button" aria-label="Скрыть боковую панель" style="width: 36px; height: 36px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="M9 4v16"></path></svg>
+      </button>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 2px; margin-top: 6px">
+      <button class="row" type="button" style="height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-size: 14px; cursor: pointer; text-align: left">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"></path><path d="M17.5 3.5a2.1 2.1 0 0 1 3 3L13 14l-4 1 1-4z"></path></svg>
+        <span style="flex: 1">Новый чат</span>
+        <span style="font-size: 12px; font-weight: 500; color: #6B6E76">⌘K</span>
+      </button>
+      <button class="row" type="button" style="height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-size: 14px; cursor: pointer; text-align: left">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m20 20-4.2-4.2"></path></svg>
+        <span>Поиск по чатам</span>
+      </button>
+      <button class="row" type="button" style="height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-size: 14px; cursor: pointer; text-align: left">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+        <span>Проекты</span>
+      </button>
+    </div>
+    <nav class="side-hide" aria-label="История" style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; margin-top: 18px">
+      <p style="margin: 0 10px 6px; font-size: 12px; font-weight: 550; color: #6B6E76">Сегодня</p>
+      <button class="row" type="button" aria-current="page" style="height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 6px 0 10px; border: 0; border-radius: 10px; background: #E9E9EC; font-size: 14px; font-weight: 550; color: #0E0F12; text-align: left; cursor: pointer">
+        <span style="flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Разбор идеи кофейни</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="#5C5F67"><circle cx="5" cy="12" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="19" cy="12" r="1.6"></circle></svg>
+      </button>
+      <button class="row" type="button" style="height: 36px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-size: 14px; color: #2A2D33; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer">План подготовки к экзамену</button>
+      <p style="margin: 16px 10px 6px; font-size: 12px; font-weight: 550; color: #6B6E76">Вчера</p>
+      <button class="row" type="button" style="height: 36px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-size: 14px; color: #2A2D33; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer">Письмо арендодателю</button>
+      <button class="row" type="button" style="height: 36px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-size: 14px; color: #2A2D33; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer">Тьюринг-баттл, раунд 3</button>
+      <p style="margin: 16px 10px 6px; font-size: 12px; font-weight: 550; color: #6B6E76">Последние 7 дней</p>
+      <button class="row" type="button" style="height: 36px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-size: 14px; color: #2A2D33; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer">Как работает память Mira</button>
+      <button class="row" type="button" style="height: 36px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-size: 14px; color: #2A2D33; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer">Сырники без муки</button>
+      <button class="row" type="button" style="height: 36px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-size: 14px; color: #2A2D33; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer">Сравнение ноутбуков для учёбы</button>
+    </nav>
+    <button class="row side-hide" type="button" style="height: 52px; display: flex; align-items: center; gap: 10px; padding: 0 8px; border: 0; border-radius: 12px; background: transparent; cursor: pointer; text-align: left">
+      <span style="width: 32px; height: 32px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #E3E7FC; color: #1F3BD6; font-size: 13px; font-weight: 600">Вы</span>
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25">
+        <span style="font-size: 14px; font-weight: 550">Мой профиль</span>
+        <span style="font-size: 12px; color: #6B6E76">Бесплатный план</span>
+      </span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5C5F67" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg>
+    </button>
+  </aside>
+
+  <main style="flex: 999 1 560px; min-width: 0; height: 100vh; display: flex; flex-direction: column; background: #FFFFFF">
+    <header style="height: 56px; flex: none; display: flex; align-items: center; gap: 4px; padding: 0 16px; border-bottom: 1px solid #F0F0F2">
+      <button class="ib" type="button" style="height: 40px; display: flex; align-items: center; gap: 6px; padding: 0 12px; color: #0E0F12; font-size: 16px; font-weight: 600; letter-spacing: -0.01em">
+        <span>Mira 1.0</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6E76" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+      </button>
+      <span style="width: 1px; height: 18px; background: #E4E4E8; margin: 0 6px"></span>
+      <h1 style="margin: 0; min-width: 0; font-size: 14px; font-weight: 500; color: #5C5F67; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Разбор идеи кофейни</h1>
+      <span style="flex: 1"></span>
+      <button class="ib" type="button" style="height: 36px; display: flex; align-items: center; gap: 7px; padding: 0 14px; border: 1px solid #E4E4E8; border-radius: 999px; color: #0E0F12; font-size: 14px; font-weight: 500">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"></path></svg>
+        Поделиться
+      </button>
+      <button class="ib" type="button" aria-label="Ещё" style="width: 40px; height: 40px">
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><circle cx="5" cy="12" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="19" cy="12" r="1.6"></circle></svg>
+      </button>
+    </header>
+
+    <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 36px 24px 24px">
+      <div style="max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px">
+
+        <div style="display: flex; justify-content: flex-end">
+          <div style="max-width: 75%; padding: 10px 16px; border-radius: 22px; background: #F1F1F3; font-size: 16px; line-height: 1.55">Хочу открыть кофейню с самообслуживанием рядом с универом. Разбери идею честно — где слабые места?</div>
+        </div>
+
+        <article style="display: flex; gap: 14px; align-items: flex-start">
+          <svg width="26" height="26" viewBox="0 0 64 64" fill="none" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M10 50V31a11 11 0 0 1 22 0a11 11 0 0 1 22 0V50" stroke="#1F3BD6" stroke-width="9" stroke-linejoin="round"></path><circle cx="32" cy="44" r="5" fill="#FF5A4E"></circle></svg>
+          <div class="prose" style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; font-size: 16px; line-height: 1.7; color: #1A1C21">
+            <button class="ib" type="button" aria-expanded="false" style="align-self: flex-start; height: 30px; display: flex; align-items: center; gap: 4px; padding: 0 8px 0 4px; margin-left: -4px; border-radius: 8px; font-size: 14px; color: #5C5F67">
+              Размышляла 6 секунд
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg>
+            </button>
+            <p style="margin: 0">Идея рабочая, но держится на трёх допущениях — и каждое стоит проверить до того, как подписывать аренду.</p>
+            <h2 style="margin: 10px 0 0; font-family: 'Inter Tight', 'Inter', sans-serif; font-size: 20px; line-height: 1.3; font-weight: 600; letter-spacing: -0.02em">Что говорит в пользу</h2>
+            <ul style="margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px">
+              <li><strong style="font-weight: 600">Стабильный поток.</strong> Студенты приходят каждый будний день, а не по настроению.</li>
+              <li><strong style="font-weight: 600">Меньше расходов на персонал.</strong> Самообслуживание снимает главный постоянный расход небольшой кофейни.</li>
+              <li><strong style="font-weight: 600">Скорость.</strong> Короткий чек и быстрая выдача — ровно то, что нужно между парами.</li>
+            </ul>
+            <h2 style="margin: 10px 0 0; font-family: 'Inter Tight', 'Inter', sans-serif; font-size: 20px; line-height: 1.3; font-weight: 600; letter-spacing: -0.02em">Где слабые места</h2>
+            <ol style="margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px">
+              <li><strong style="font-weight: 600">Сезонность.</strong> Летом и в сессию поток падает. Посчитайте, переживёте ли вы три тихих месяца.</li>
+              <li><strong style="font-weight: 600">Сервис без людей.</strong> Кофемашина ломается, молоко заканчивается — а исправить некому. Нужен регламент обслуживания.</li>
+              <li><strong style="font-weight: 600">Конкуренция внутри корпуса.</strong> Столовая и вендинговые автоматы уже стоят там, где студенты проводят день.</li>
+            </ol>
+            <h2 style="margin: 10px 0 0; font-family: 'Inter Tight', 'Inter', sans-serif; font-size: 20px; line-height: 1.3; font-weight: 600; letter-spacing: -0.02em">Как проверить за две недели</h2>
+            <div style="border: 1px solid #E9E9EC; border-radius: 14px; overflow-x: auto">
+              <table style="width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.5">
+                <thead>
+                  <tr style="background: #F7F7F8; text-align: left">
+                    <th style="padding: 10px 14px; font-weight: 600; border-bottom: 1px solid #E9E9EC">Что проверяем</th>
+                    <th style="padding: 10px 14px; font-weight: 600; border-bottom: 1px solid #E9E9EC">Как</th>
+                    <th style="padding: 10px 14px; font-weight: 600; border-bottom: 1px solid #E9E9EC; white-space: nowrap">Срок</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="padding: 10px 14px; border-bottom: 1px solid #F0F0F2; font-weight: 500">Поток людей</td>
+                    <td style="padding: 10px 14px; border-bottom: 1px solid #F0F0F2; color: #3E4148">Посчитать прохожих у входа утром, в обед и вечером</td>
+                    <td style="padding: 10px 14px; border-bottom: 1px solid #F0F0F2; color: #3E4148; white-space: nowrap">1 неделя</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px 14px; border-bottom: 1px solid #F0F0F2; font-weight: 500">Готовность платить</td>
+                    <td style="padding: 10px 14px; border-bottom: 1px solid #F0F0F2; color: #3E4148">Поставить временную стойку на пять учебных дней</td>
+                    <td style="padding: 10px 14px; border-bottom: 1px solid #F0F0F2; color: #3E4148; white-space: nowrap">1 неделя</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px 14px; font-weight: 500">Аренда</td>
+                    <td style="padding: 10px 14px; color: #3E4148">Запросить ставки у трёх арендодателей рядом</td>
+                    <td style="padding: 10px 14px; color: #3E4148; white-space: nowrap">3 дня</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p style="margin: 0">Хотите, соберу из этого финансовую модель на первый год? Понадобятся ставка аренды и средний чек — подставим их как переменные.</p>
+
+            <div style="display: flex; align-items: center; gap: 2px; margin-left: -8px">
+              <button class="ib" type="button" aria-label="Скопировать" style="width: 32px; height: 32px; border-radius: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2.5"></rect><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path></svg></button>
+              <button class="ib" type="button" aria-label="Хороший ответ" style="width: 32px; height: 32px; border-radius: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v10H4V10zM7 10l4-7a2 2 0 0 1 3 2l-1 4h6a2 2 0 0 1 2 2.3l-1.2 7A2 2 0 0 1 17.8 20H7"></path></svg></button>
+              <button class="ib" type="button" aria-label="Плохой ответ" style="width: 32px; height: 32px; border-radius: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14V4H4v10zM7 14l4 7a2 2 0 0 0 3-2l-1-4h6a2 2 0 0 0 2-2.3l-1.2-7A2 2 0 0 0 17.8 4H7"></path></svg></button>
+              <button class="ib" type="button" aria-label="Ответить заново" style="width: 32px; height: 32px; border-radius: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7L20 8.5"></path><path d="M20 3.5v5h-5"></path></svg></button>
+              <button class="ib" type="button" aria-label="Озвучить" style="width: 32px; height: 32px; border-radius: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"></path><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"></path></svg></button>
+              <span style="margin-left: 8px; font-size: 12px; color: #6B6E76">Mira 1.0 · 9 с</span>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px">
+              <span style="font-size: 13px; font-weight: 550; color: #5C5F67">Продолжить</span>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                <button class="sugg" type="button" style="min-height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border: 1px solid #E4E4E8; border-radius: 12px; background: #FFFFFF; font-size: 14px; color: #2A2D33; cursor: pointer; text-align: left">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6B6E76" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+                  Собери финмодель на первый год
+                </button>
+                <button class="sugg" type="button" style="min-height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border: 1px solid #E4E4E8; border-radius: 12px; background: #FFFFFF; font-size: 14px; color: #2A2D33; cursor: pointer; text-align: left">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6B6E76" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+                  Как провести тест спроса?
+                </button>
+                <button class="sugg" type="button" style="min-height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border: 1px solid #E4E4E8; border-radius: 12px; background: #FFFFFF; font-size: 14px; color: #2A2D33; cursor: pointer; text-align: left">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6B6E76" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+                  Какое оборудование выбрать
+                </button>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <div style="flex: none; padding: 0 24px 10px">
+      <div style="max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 6px; padding: 10px 10px 10px 16px; border: 1px solid #E2E2E6; border-radius: 26px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(14,15,18,.04), 0 10px 28px rgba(14,15,18,.06)">
+        <label for="chatComposer" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap">Сообщение для Mira</label>
+        <textarea id="chatComposer" rows="1" placeholder="Ответить Mira…" style="width: 100%; box-sizing: border-box; min-height: 36px; padding: 6px 4px; border: 0; resize: none; background: transparent; color: #0E0F12; font-size: 16px; line-height: 24px"></textarea>
+        <div style="display: flex; align-items: center; gap: 6px">
+          <button class="ib" type="button" aria-label="Прикрепить файл или фото" style="width: 40px; height: 40px; border: 1px solid #E4E4E8; border-radius: 50%">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+          </button>
+          <button class="ib" type="button" aria-pressed="false" style="height: 40px; display: flex; align-items: center; gap: 7px; padding: 0 14px; border: 1px solid #E4E4E8; border-radius: 999px; color: #3E4148; font-size: 14px; font-weight: 500">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"></path></svg>
+            Поиск
+          </button>
+          <button type="button" aria-pressed="true" style="height: 40px; display: flex; align-items: center; gap: 7px; padding: 0 14px; border: 1px solid #D3DAFB; border-radius: 999px; background: #EEF1FE; color: #1F3BD6; font-size: 14px; font-weight: 500; cursor: pointer">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"></path></svg>
+            Подумать глубже
+          </button>
+          <span style="flex: 1"></span>
+          <button class="ib" type="button" aria-label="Голосовой ввод" style="width: 40px; height: 40px; border-radius: 50%">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>
+          </button>
+          <button type="button" aria-label="Отправить" disabled style="width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 50%; background: #ECECEF; color: #9A9CA3">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <p style="flex: none; margin: 0; padding: 0 16px 12px; text-align: center; font-size: 12px; color: #6B6E76">Mira может ошибаться. Проверяйте важное.</p>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1120}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

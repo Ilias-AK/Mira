@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 236 64" width="236" height="64">
+  <path d="M10 50V31a11 11 0 0 1 22 0a11 11 0 0 1 22 0V50" fill="none" stroke="#1F3BD6" stroke-width="9" stroke-linejoin="round"/>
+  <circle cx="32" cy="44" r="5" fill="#FF5A4E"/>
+  <text x="70" y="49" font-family="Inter, 'Inter Mira', -apple-system, 'Segoe UI', sans-serif" font-size="46" font-weight="650" letter-spacing="-2" fill="#0E0F12">Mira</text>
+</svg>

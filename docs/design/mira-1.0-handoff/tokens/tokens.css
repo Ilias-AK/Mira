@@ -1,0 +1,162 @@
+/* Mira 1.0 — токены (копия блока из web/app.css). Подключайте в любом проекте: React, Vue, лендинг. */
+
+/* ---------- Токены: светлая тема ---------- */
+:root {
+  color-scheme: light;
+
+  /* Поверхности */
+  --bg: #ffffff;
+  --panel: #f7f7f8;
+  --surface: #ffffff;
+  --bubble: #f1f1f3;
+  --hover: #ededf0;
+  --active: #e9e9ec;
+  --line: #e9e9ec;
+  --line-strong: #e2e2e6;
+  --scrim: rgba(14, 15, 18, .32);
+
+  /* Текст */
+  --text: #0e0f12;
+  --text-answer: #1a1c21;
+  --text-2: #5c5f67;
+  --text-3: #6b6e76;
+  --placeholder: #73767e;
+
+  /* Бренд */
+  --accent: #1f3bd6;
+  --accent-hover: #1931b8;
+  --accent-text: #1f3bd6;
+  --accent-soft: #eef1fe;
+  --accent-line: #d3dafb;
+  --on-accent: #ffffff;
+  --coral: #ff5a4e;
+  --ink: #0e0f12;
+  --on-ink: #ffffff;
+  --green: #1e8a5e;
+  --violet: #8a4bd6;
+  --danger: #c2334d;
+  --danger-soft: #fdf1f3;
+
+  /* Знак */
+  --mark-stroke: #1f3bd6;
+  --mark-dot: #ff5a4e;
+
+  /* Кнопка отправки в покое */
+  --send-idle-bg: #ececef;
+  --send-idle-fg: #9a9ca3;
+
+  /* Код */
+  --code-bg: #f7f7f8;
+  --code-head: #f1f1f3;
+  --code-text: #1a1c21;
+
+  /* Тени */
+  --shadow-composer: 0 1px 2px rgba(14, 15, 18, .04), 0 10px 28px rgba(14, 15, 18, .06);
+  --shadow-composer-focus: 0 1px 2px rgba(14, 15, 18, .05), 0 12px 32px rgba(14, 15, 18, .09);
+  --shadow-menu: 0 12px 32px rgba(14, 15, 18, .12), 0 2px 6px rgba(14, 15, 18, .06);
+
+  /* Размеры */
+  --sidebar-w: 272px;
+  --topbar-h: 56px;
+  --column: 720px;
+  --r-xs: 8px;
+  --r-sm: 10px;
+  --r-md: 12px;
+  --r-lg: 20px;
+  --r-composer: 26px;
+  --r-full: 999px;
+
+  /* Движение */
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
+  --ease-drawer: cubic-bezier(.32, .72, 0, 1);
+
+  /* Шрифт */
+  --font: "Inter Mira", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* ---------- Токены: тёмная тема ---------- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0e0f12;
+  --panel: #141518;
+  --surface: #18191d;
+  --bubble: #1f2025;
+  --hover: #1f2025;
+  --active: #23242a;
+  --line: #1c1d22;
+  --line-strong: #2a2b31;
+  --scrim: rgba(0, 0, 0, .55);
+  --text: #ececef;
+  --text-answer: #dedfe4;
+  --text-2: #a3a6ae;
+  --text-3: #8c8f98;
+  --placeholder: #8c8f98;
+  --accent: #5f72f5;
+  --accent-hover: #7083ff;
+  --accent-text: #8c9bff;
+  --accent-soft: #1d2242;
+  --accent-line: #2f3767;
+  --on-accent: #ffffff;
+  --coral: #ff6b5e;
+  --ink: #ececef;
+  --on-ink: #0e0f12;
+  --green: #4cc38a;
+  --violet: #b48cf2;
+  --danger: #ff7a8c;
+  --danger-soft: #2a1519;
+  --mark-stroke: #8c9bff;
+  --mark-dot: #ff6b5e;
+  --send-idle-bg: #26272d;
+  --send-idle-fg: #6b6e76;
+  --code-bg: #16171b;
+  --code-head: #1b1c21;
+  --code-text: #d9dae0;
+  --shadow-composer: 0 10px 30px rgba(0, 0, 0, .35);
+  --shadow-composer-focus: 0 12px 34px rgba(0, 0, 0, .45);
+  --shadow-menu: 0 16px 40px rgba(0, 0, 0, .5), 0 0 0 1px #2a2b31;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0e0f12;
+    --panel: #141518;
+    --surface: #18191d;
+    --bubble: #1f2025;
+    --hover: #1f2025;
+    --active: #23242a;
+    --line: #1c1d22;
+    --line-strong: #2a2b31;
+    --scrim: rgba(0, 0, 0, .55);
+    --text: #ececef;
+    --text-answer: #dedfe4;
+    --text-2: #a3a6ae;
+    --text-3: #8c8f98;
+    --placeholder: #8c8f98;
+    --accent: #5f72f5;
+    --accent-hover: #7083ff;
+    --accent-text: #8c9bff;
+    --accent-soft: #1d2242;
+    --accent-line: #2f3767;
+    --on-accent: #ffffff;
+    --coral: #ff6b5e;
+    --ink: #ececef;
+    --on-ink: #0e0f12;
+    --green: #4cc38a;
+    --violet: #b48cf2;
+    --danger: #ff7a8c;
+    --danger-soft: #2a1519;
+    --mark-stroke: #8c9bff;
+    --mark-dot: #ff6b5e;
+    --send-idle-bg: #26272d;
+    --send-idle-fg: #6b6e76;
+    --code-bg: #16171b;
+    --code-head: #1b1c21;
+    --code-text: #d9dae0;
+    --shadow-composer: 0 10px 30px rgba(0, 0, 0, .35);
+    --shadow-composer-focus: 0 12px 34px rgba(0, 0, 0, .45);
+    --shadow-menu: 0 16px 40px rgba(0, 0, 0, .5), 0 0 0 1px #2a2b31;
+  }
+}
+

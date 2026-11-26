@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Mira — основа дизайна</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&amp;family=Inter+Tight:wght@500..700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#1F3BD6}a:hover{color:#152CA8}
+button{font:inherit;color:inherit}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1200px; box-sizing: border-box; padding: 64px; display: flex; flex-direction: column; gap: 44px; background: #FFFFFF; color: #0E0F12; font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased">
+  <div style="display: flex; flex-direction: column; gap: 8px">
+    <span style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6B6E76">Основа</span>
+    <h1 style="margin: 0; font-family: 'Inter Tight', 'Inter', sans-serif; font-size: 48px; line-height: 1.05; font-weight: 600; letter-spacing: -0.04em">Цвет, шрифт и компоненты</h1>
+  </div>
+
+  <section style="display: flex; flex-direction: column; gap: 16px">
+    <h2 style="margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.015em">Цвет — 90% нейтральные, 10% бренд</h2>
+    <div style="display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 12px">
+      <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 64px; border-radius: 12px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #E4E4E8"></div><span style="font-size: 13px; font-weight: 600">Фон</span><span style="margin-top: -6px; font-size: 12px; color: #6B6E76">#FFFFFF</span></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 64px; border-radius: 12px; background: #F7F7F8; box-shadow: inset 0 0 0 1px #EDEDF0"></div><span style="font-size: 13px; font-weight: 600">Панель</span><span style="margin-top: -6px; font-size: 12px; color: #6B6E76">#F7F7F8</span></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 64px; border-radius: 12px; background: #F1F1F3"></div><span style="font-size: 13px; font-weight: 600">Сообщение</span><span style="margin-top: -6px; font-size: 12px; color: #6B6E76">#F1F1F3</span></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 64px; border-radius: 12px; background: #E9E9EC"></div><span style="font-size: 13px; font-weight: 600">Линия</span><span style="margin-top: -6px; font-size: 12px; color: #6B6E76">#E9E9EC</span></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 64px; border-radius: 12px; background: #5C5F67"></div><span style="font-size: 13px; font-weight: 600">Вторичный текст</span><span style="margin-top: -6px; font-size: 12px; color: #6B6E76">#5C5F67</span></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 64px; border-radius: 12px; background: #0E0F12"></div><span style="font-size: 13px; font-weight: 600">Графит</span><span style="margin-top: -6px; font-size: 12px; color: #6B6E76">#0E0F12</span></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 64px; border-radius: 12px; background: #1F3BD6"></div><span style="font-size: 13px; font-weight: 600">Кобальт</span><span style="margin-top: -6px; font-size: 12px; color: #6B6E76">#1F3BD6</span></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 64px; border-radius: 12px; background: #FF5A4E"></div><span style="font-size: 13px; font-weight: 600">Коралл</span><span style="margin-top: -6px; font-size: 12px; color: #6B6E76">#FF5A4E</span></div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 12px; padding: 14px; border-radius: 18px; background: #0E0F12">
+      <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 44px; border-radius: 10px; background: #0E0F12; box-shadow: inset 0 0 0 1px #2A2B31"></div><span style="font-size: 12px; color: #A3A6AE">Фон · #0E0F12</span></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 44px; border-radius: 10px; background: #141518; box-shadow: inset 0 0 0 1px #24252B"></div><span style="font-size: 12px; color: #A3A6AE">Панель · #141518</span></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 44px; border-radius: 10px; background: #1F2025"></div><span style="font-size: 12px; color: #A3A6AE">Сообщение · #1F2025</span></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 44px; border-radius: 10px; background: #2A2B31"></div><span style="font-size: 12px; color: #A3A6AE">Линия · #2A2B31</span></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 44px; border-radius: 10px; background: #A3A6AE"></div><span style="font-size: 12px; color: #A3A6AE">Вторичный · #A3A6AE</span></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 44px; border-radius: 10px; background: #ECECEF"></div><span style="font-size: 12px; color: #A3A6AE">Текст · #ECECEF</span></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 44px; border-radius: 10px; background: #8C9BFF"></div><span style="font-size: 12px; color: #A3A6AE">Кобальт · #8C9BFF</span></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 44px; border-radius: 10px; background: #FF6B5E"></div><span style="font-size: 12px; color: #A3A6AE">Коралл · #FF6B5E</span></div>
+    </div>
+  </section>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 48px">
+    <section style="display: flex; flex-direction: column; gap: 4px">
+      <h2 style="margin: 0 0 12px; font-size: 18px; font-weight: 600; letter-spacing: -0.015em">Шрифт — Inter Tight + Inter</h2>
+      <div style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 20px; align-items: baseline; padding: 14px 0; border-top: 1px solid #E9E9EC">
+        <span style="font-size: 12px; line-height: 1.4; color: #6B6E76">Дисплей<br>Inter Tight 600 · 40/44 · −3,5%</span>
+        <span style="font-family: 'Inter Tight', 'Inter', sans-serif; font-size: 40px; line-height: 1.1; font-weight: 600; letter-spacing: -0.035em">Чем займёмся?</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 20px; align-items: baseline; padding: 14px 0; border-top: 1px solid #E9E9EC">
+        <span style="font-size: 12px; line-height: 1.4; color: #6B6E76">Заголовок<br>Inter Tight 600 · 20/26</span>
+        <span style="font-family: 'Inter Tight', 'Inter', sans-serif; font-size: 20px; line-height: 1.3; font-weight: 600; letter-spacing: -0.02em">Где слабые места</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 20px; align-items: baseline; padding: 14px 0; border-top: 1px solid #E9E9EC">
+        <span style="font-size: 12px; line-height: 1.4; color: #6B6E76">Текст ответа<br>Inter 400 · 16/27</span>
+        <span style="font-size: 16px; line-height: 1.7">Идея рабочая, но держится на трёх допущениях — и каждое стоит проверить.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 20px; align-items: baseline; padding: 14px 0; border-top: 1px solid #E9E9EC">
+        <span style="font-size: 12px; line-height: 1.4; color: #6B6E76">Интерфейс<br>Inter 500 · 14/20</span>
+        <span style="font-size: 14px; line-height: 1.45; font-weight: 500">Новый чат · Поиск по чатам · Поделиться</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 20px; align-items: baseline; padding: 14px 0; border-top: 1px solid #E9E9EC">
+        <span style="font-size: 12px; line-height: 1.4; color: #6B6E76">Подпись<br>Inter 400 · 12/16</span>
+        <span style="font-size: 12px; line-height: 1.35; color: #5C5F67">Mira может ошибаться. Проверяйте важное.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 20px; align-items: baseline; padding: 14px 0; border-top: 1px solid #E9E9EC; border-bottom: 1px solid #E9E9EC">
+        <span style="font-size: 12px; line-height: 1.4; color: #6B6E76">Код<br>JetBrains Mono · 14/24</span>
+        <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 14px; line-height: 1.7">list(dict.fromkeys(items))</span>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 22px">
+      <h2 style="margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.015em">Компоненты</h2>
+
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="font-size: 12px; font-weight: 550; color: #6B6E76">Кнопки</span>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+          <button type="button" style="height: 44px; padding: 0 20px; border: 0; border-radius: 999px; background: #0E0F12; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer">Начать бесплатно</button>
+          <button type="button" style="height: 44px; padding: 0 20px; border: 0; border-radius: 999px; background: #1F3BD6; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer">Продолжить</button>
+          <button type="button" style="height: 44px; padding: 0 20px; border: 1px solid #E2E2E6; border-radius: 999px; background: #FFFFFF; color: #0E0F12; font-size: 15px; font-weight: 500; cursor: pointer">Поделиться</button>
+          <button type="button" style="height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: transparent; color: #3E4148; font-size: 15px; font-weight: 500; cursor: pointer">Отмена</button>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px">
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <span style="font-size: 12px; font-weight: 550; color: #6B6E76">Кнопка отправки: пусто · готово · стоп</span>
+          <div style="display: flex; align-items: center; gap: 12px">
+            <button type="button" aria-label="Отправить" disabled style="width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; background: #ECECEF; color: #9A9CA3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></button>
+            <button type="button" aria-label="Отправить" style="width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; background: #1F3BD6; color: #FFFFFF; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></button>
+            <button type="button" aria-label="Остановить ответ" style="width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; background: #0E0F12; color: #FFFFFF; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor"></rect></svg></button>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <span style="font-size: 12px; font-weight: 550; color: #6B6E76">Переключатели режимов</span>
+          <div style="display: flex; align-items: center; gap: 8px">
+            <button type="button" aria-pressed="false" style="height: 40px; display: flex; align-items: center; gap: 7px; padding: 0 14px; border: 1px solid #E4E4E8; border-radius: 999px; background: #FFFFFF; color: #3E4148; font-size: 14px; font-weight: 500; cursor: pointer"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"></path></svg>Поиск</button>
+            <button type="button" aria-pressed="true" style="height: 40px; display: flex; align-items: center; gap: 7px; padding: 0 14px; border: 1px solid #D3DAFB; border-radius: 999px; background: #EEF1FE; color: #1F3BD6; font-size: 14px; font-weight: 500; cursor: pointer"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"></path></svg>Подумать глубже</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="font-size: 12px; font-weight: 550; color: #6B6E76">Сообщения: вопрос в «пузыре», ответ — открытым текстом</span>
+        <div style="display: flex; flex-direction: column; gap: 14px; padding: 20px; border: 1px solid #E9E9EC; border-radius: 18px">
+          <div style="display: flex; justify-content: flex-end"><div style="padding: 9px 15px; border-radius: 20px; background: #F1F1F3; font-size: 15px">Запомни, что я учу Python</div></div>
+          <div style="display: flex; gap: 12px; align-items: flex-start">
+            <svg width="22" height="22" viewBox="0 0 64 64" fill="none" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M10 50V31a11 11 0 0 1 22 0a11 11 0 0 1 22 0V50" stroke="#1F3BD6" stroke-width="9" stroke-linejoin="round"></path><circle cx="32" cy="44" r="5" fill="#FF5A4E"></circle></svg>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <span style="align-self: flex-start; display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; background: #EEF1FE; color: #1F3BD6; font-size: 12px; font-weight: 550"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4.8A1.8 1.8 0 0 1 7.8 3h8.4A1.8 1.8 0 0 1 18 4.8V21l-6-3.8L6 21z"></path></svg>Память обновлена</span>
+              <span style="font-size: 15px; line-height: 1.6">Запомнила. Буду объяснять на примерах из Python.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="font-size: 12px; font-weight: 550; color: #6B6E76">Скругления: 8 · 12 · 20 · 26 · круг</span>
+        <div style="display: flex; align-items: flex-end; gap: 14px">
+          <div style="width: 56px; height: 56px; border-radius: 8px; background: #F1F1F3; box-shadow: inset 0 0 0 1px #E2E2E6"></div>
+          <div style="width: 56px; height: 56px; border-radius: 12px; background: #F1F1F3; box-shadow: inset 0 0 0 1px #E2E2E6"></div>
+          <div style="width: 56px; height: 56px; border-radius: 20px; background: #F1F1F3; box-shadow: inset 0 0 0 1px #E2E2E6"></div>
+          <div style="width: 96px; height: 56px; border-radius: 26px; background: #F1F1F3; box-shadow: inset 0 0 0 1px #E2E2E6"></div>
+          <div style="width: 56px; height: 56px; border-radius: 50%; background: #F1F1F3; box-shadow: inset 0 0 0 1px #E2E2E6"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1200}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -2,189 +2,269 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f7f9fd">
-  <meta name="color-scheme" content="light">
-  <title>Mira 1.0</title>
-  <link rel="stylesheet" href="/app.css?v=10">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" id="themeColor">
+  <title>Mira</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="preload" href="/assets/fonts/inter-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/app.css?v=24">
+  <script>
+    /* Тема применяется до отрисовки, чтобы не было «вспышки» светлой темы */
+    try {
+      var t = localStorage.getItem("mira-theme");
+      if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+    } catch (e) {}
+  </script>
 </head>
 <body>
   <a class="skip-link" href="#composerInput">Перейти к сообщению</a>
 
-  <div class="app" id="app">
-    <aside class="rail" aria-label="Основная навигация">
-      <button class="rail-brand" type="button" aria-label="Mira" data-new-chat>
-        <img src="/assets/mira-mark-cobalt.png" alt="">
-      </button>
-
-      <nav class="rail-nav" aria-label="Разделы">
-        <button class="rail-button active" id="threadPanelButton" type="button" aria-label="Показать или скрыть диалоги" aria-current="page" aria-expanded="true" aria-controls="sidebar">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5.5 18.5 3 21v-5.3A8.5 8.5 0 0 1 4.5 3h15A1.5 1.5 0 0 1 21 4.5v10a1.5 1.5 0 0 1-1.5 1.5H8.8a8.4 8.4 0 0 1-3.3 2.5Z"/></svg>
-        </button>
-        <button class="rail-button" type="button" aria-label="Коллекции">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m4 8 8-4 8 4-8 4-8-4Z"/><path d="m4 12 8 4 8-4M4 16l8 4 8-4"/></svg>
-        </button>
-        <button class="rail-button" type="button" aria-label="О Мире">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v17H6.5A2.5 2.5 0 0 0 4 22V5.5ZM20 5.5A2.5 2.5 0 0 0 17.5 3H12v17h5.5A2.5 2.5 0 0 1 20 22V5.5Z"/></svg>
-        </button>
-      </nav>
-
-      <button class="rail-button rail-settings" type="button" aria-label="Настройки">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9.8 3.4 10.5 2h3l.7 1.4 1.5.6 1.5-.5 2.1 2.1-.5 1.5.6 1.5 1.4.7v3l-1.4.7-.6 1.5.5 1.5-2.1 2.1-1.5-.5-1.5.6-.7 1.4h-3l-.7-1.4-1.5-.6-1.5.5-2.1-2.1.5-1.5-.6-1.5-1.4-.7v-3l1.4-.7.6-1.5-.5-1.5 2.1-2.1 1.5.5 1.5-.6Z"/><circle cx="12" cy="12" r="3"/></svg>
-      </button>
-    </aside>
-
-    <aside class="thread-sidebar" id="sidebar" aria-label="Диалоги">
-      <div class="wordmark">
-        <img src="/assets/mira-mark-cobalt.png" alt="">
-        <span>Mira</span>
-        <button class="sidebar-toggle" id="sidebarCollapseButton" type="button" aria-label="Свернуть диалоги" aria-expanded="true" aria-controls="sidebar">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m14 7-5 5 5 5"/></svg>
+  <div class="app is-empty" id="app">
+    <!-- ───────────── Боковая панель ───────────── -->
+    <aside class="sidebar" id="sidebar" aria-label="Чаты">
+      <div class="sidebar-head">
+        <a class="brand" href="./" aria-label="Mira — на главную">
+          <svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><path d="M10 50V31a11 11 0 0 1 22 0a11 11 0 0 1 22 0V50"/><circle cx="32" cy="44" r="5"/></svg>
+          <span>Mira</span>
+        </a>
+        <button class="icon-btn" id="sidebarClose" type="button" aria-label="Скрыть боковую панель" aria-controls="sidebar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg>
         </button>
       </div>
 
-      <button class="new-chat" id="newChatButton" type="button">
-        <span class="plus" aria-hidden="true"></span>
-        <span>Новый диалог</span>
-      </button>
+      <div class="sidebar-nav">
+        <button class="nav-item" id="newChatButton" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"/><path d="M17.5 3.5a2.1 2.1 0 0 1 3 3L13 14l-4 1 1-4z"/></svg>
+          <span>Новый чат</span>
+          <kbd id="newChatKbd">Ctrl K</kbd>
+        </button>
+        <label class="search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
+          <input id="historySearch" type="search" placeholder="Поиск по чатам" aria-label="Поиск по чатам" autocomplete="off">
+        </label>
+        <button class="nav-item" id="projectsButton" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <span>Проекты</span>
+        </button>
+      </div>
 
-      <div class="sidebar-section">
-        <p class="section-label">Недавние</p>
-        <nav class="thread-list" aria-label="История диалогов">
-          <button class="thread-item active" id="currentThread" type="button" aria-current="page">
-            <span id="currentThreadLabel">Новый диалог</span>
+      <nav class="history" id="history" aria-label="История чатов"></nav>
+
+      <div class="sidebar-foot">
+        <button class="profile" id="settingsButton" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="settingsMenu">
+          <span class="avatar" aria-hidden="true">Вы</span>
+          <span class="profile-text">
+            <span class="profile-name">Настройки</span>
+            <span class="profile-sub" id="connectionLabel">Подключение…</span>
+          </span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+        </button>
+        <div class="menu settings-menu" id="settingsMenu" role="menu" aria-label="Настройки" hidden>
+          <button class="menu-item" type="button" role="menuitem" id="memoryButton">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4.8A1.8 1.8 0 0 1 7.8 3h8.4A1.8 1.8 0 0 1 18 4.8V21l-6-3.8L6 21z"/></svg>
+            Память
           </button>
-          <button class="thread-item" type="button" data-prompt="Как меня зовут?">
-            <span>Как меня зовут</span>
-          </button>
-          <button class="thread-item" type="button" data-prompt="Расскажи немного о себе">
-            <span>Знакомство с Мирой</span>
-          </button>
-        </nav>
+          <div class="menu-sep" role="separator"></div>
+          <p class="menu-label">Тема</p>
+          <button class="menu-item" type="button" role="menuitemradio" data-theme-option="system" aria-checked="true">Как в системе</button>
+          <button class="menu-item" type="button" role="menuitemradio" data-theme-option="light" aria-checked="false">Светлая</button>
+          <button class="menu-item" type="button" role="menuitemradio" data-theme-option="dark" aria-checked="false">Тёмная</button>
+          <div class="menu-sep" role="separator"></div>
+          <button class="menu-item danger" type="button" role="menuitem" id="clearHistory">Очистить историю</button>
+        </div>
       </div>
     </aside>
 
-    <button class="sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="Закрыть меню"></button>
+    <div class="scrim" id="scrim" hidden></div>
 
+    <!-- ───────────── Основная область ───────────── -->
     <main class="main">
       <header class="topbar">
-        <button class="icon-button menu-button" id="sidebarButton" type="button" aria-label="Открыть диалоги" aria-expanded="false">
-          <span></span><span></span><span></span>
+        <button class="icon-btn" id="sidebarOpen" type="button" aria-label="Показать боковую панель" aria-controls="sidebar" aria-expanded="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg>
         </button>
 
         <div class="model-picker">
-          <button class="model-button" id="modelButton" type="button" aria-expanded="false" aria-controls="modelMenu">
-            <span>Mira 1.0</span>
-            <span class="chevron" aria-hidden="true"></span>
+          <button class="model-btn" id="modelButton" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="modelMenu">
+            <span id="modelName">Mira 1.0</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
           </button>
-          <div class="model-menu" id="modelMenu" role="dialog" aria-label="Выбор модели">
-            <p>Текущая модель</p>
-            <button class="model-option" type="button" aria-current="true">
-              <img src="/assets/mira-mark-cobalt.png" alt="">
-              <span>Mira 1.0</span>
-              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 10 3 3 7-7"/></svg>
+          <div class="menu model-menu" id="modelMenu" role="menu" aria-label="Модель" hidden>
+            <p class="menu-label">Модель</p>
+            <button class="model-option" type="button" role="menuitemradio" aria-checked="true">
+              <svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><path d="M10 50V31a11 11 0 0 1 22 0a11 11 0 0 1 22 0V50"/><circle cx="32" cy="44" r="5"/></svg>
+              <span><strong>Mira 1.0</strong><small>Для повседневных разговоров</small></span>
+              <svg class="check" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>
             </button>
           </div>
         </div>
-        <h1 class="conversation-title" id="conversationTitle">Новый диалог</h1>
-        <div class="topbar-spacer"></div>
+
+        <span class="topbar-sep" aria-hidden="true"></span>
+        <h1 class="chat-title" id="chatTitle">Новый чат</h1>
+        <span class="spacer"></span>
+
+        <div class="chat-actions" id="chatActions">
+          <button class="btn btn-outline share-btn" id="shareButton" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg>
+            Поделиться
+          </button>
+          <div class="more-picker">
+            <button class="icon-btn" id="moreButton" type="button" aria-label="Ещё" aria-haspopup="menu" aria-expanded="false" aria-controls="moreMenu">
+              <svg class="i-dots" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+            </button>
+            <div class="menu more-menu" id="moreMenu" role="menu" aria-label="Действия с чатом" hidden>
+              <button class="menu-item" type="button" role="menuitem" data-chat-action="rename">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></svg>
+                Переименовать
+              </button>
+              <button class="menu-item" type="button" role="menuitem" data-chat-action="download">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+                Скачать как Markdown
+              </button>
+              <div class="menu-sep" role="separator"></div>
+              <button class="menu-item danger" type="button" role="menuitem" data-chat-action="delete">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
+                Удалить чат
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <button class="icon-btn only-mobile" id="newChatTop" type="button" aria-label="Новый чат">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"/><path d="M17.5 3.5a2.1 2.1 0 0 1 3 3L13 14l-4 1 1-4z"/></svg>
+        </button>
       </header>
 
-      <div class="notice" id="notice" role="status" aria-live="polite"></div>
-
-      <div class="chat-scroll" id="chatScroll">
-        <section class="conversation" id="conversation" aria-label="Диалог с Mira">
-          <div class="welcome" id="welcome">
-            <div class="welcome-identity" aria-hidden="true">
-              <span></span><span></span><span></span>
-              <img class="welcome-mark" src="/assets/mira-mark-cobalt.png" alt="">
-            </div>
-            <h2>Ну что, поговорим?</h2>
-            <p class="welcome-copy">Пиши как есть. Я тоже без официоза)</p>
-            <div class="welcome-actions" aria-label="Быстрый старт">
-              <button class="welcome-action" type="button" data-fill-prompt="Запомни обо мне важное из нашего разговора">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.8A1.8 1.8 0 0 1 7.8 3h8.4A1.8 1.8 0 0 1 18 4.8V21l-6-3.8L6 21V4.8Z"/><path class="accent" d="m9 12 2 2 4-4"/></svg>
-                <span><strong>Запомни меня</strong><small>Сохраню важное из разговора</small></span>
-              </button>
-              <button class="welcome-action" type="button" data-fill-prompt="Помоги мне разобрать мою идею">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7L12 3Z"/><path class="accent" d="M18 3v3M21 6h-3"/></svg>
-                <span><strong>Разбери мою идею</strong><small>Помогу разложить всё по полочкам</small></span>
-              </button>
-              <button class="welcome-action" type="button" data-fill-prompt="Давай проведём Тьюринг-баттл">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5.5h11A2.5 2.5 0 0 1 17.5 8v6A2.5 2.5 0 0 1 15 16.5H9L5 20v-3.5H4A2.5 2.5 0 0 1 1.5 14V8A2.5 2.5 0 0 1 4 5.5Z"/><path class="accent" d="M10 10.5h10A2.5 2.5 0 0 1 22.5 13v4A2.5 2.5 0 0 1 20 19.5h-1V22l-3-2.5h-6A2.5 2.5 0 0 1 7.5 17v-.5"/></svg>
-                <span><strong>Тьюринг-баттл</strong><small>Проверим меня на человечность</small></span>
-              </button>
-              <button class="welcome-action" type="button" data-fill-prompt="Ответь коротко на мой вопрос">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m13.2 2-8 11h6L10.8 22l8-11h-6l.4-9Z"/></svg>
-                <span><strong>Быстрый вопрос</strong><small>Отвечу коротко и по делу</small></span>
-              </button>
-            </div>
-          </div>
-        </section>
+      <div class="notice" id="notice" role="status" aria-live="polite" hidden>
+        <span id="noticeText"></span>
+        <span class="notice-actions" id="noticeActions"></span>
       </div>
 
-      <button class="scroll-bottom-button" id="scrollBottomButton" type="button" aria-label="К последнему сообщению" hidden>
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
-      </button>
-
-      <footer class="composer-shell">
-        <form class="composer" id="composer">
-          <div class="composer-tools">
-            <button class="add-button" id="addButton" type="button" aria-label="Дополнительные действия" aria-expanded="false" aria-controls="addMenu">
-              <span class="plus" aria-hidden="true"></span>
-            </button>
-            <div class="add-menu" id="addMenu" role="menu">
-              <button type="button" role="menuitem" data-new-chat>
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-                Новый диалог
+      <div class="scroller" id="scroller">
+        <div class="thread">
+          <section class="welcome" id="welcome" aria-labelledby="greeting">
+            <svg class="mark welcome-mark" viewBox="0 0 64 64" aria-hidden="true"><path d="M10 50V31a11 11 0 0 1 22 0a11 11 0 0 1 22 0V50"/><circle cx="32" cy="44" r="5"/></svg>
+            <h2 id="greeting">Добрый вечер. Чем займёмся?</h2>
+            <div class="hero-slot" id="heroSlot"></div>
+            <div class="suggestions" aria-label="Подсказки">
+              <button class="suggestion" type="button" data-fill="Разбери мою идею: ">
+                <svg viewBox="0 0 24 24" aria-hidden="true" style="--icon:var(--coral)"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></svg>
+                <span class="suggestion-text"><span>Разобрать идею</span><small>по-честному, без лести</small></span>
               </button>
-              <button type="button" role="menuitem" data-fill-prompt="Расскажи что-нибудь неожиданное о себе">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6L12 3Z"/></svg>
-                Подсказать вопрос
+              <button class="suggestion" type="button" data-fill="Помоги написать текст: ">
+                <svg viewBox="0 0 24 24" aria-hidden="true" style="--icon:var(--accent-text)"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></svg>
+                <span class="suggestion-text"><span>Написать текст</span><small>письмо, пост, резюме</small></span>
+              </button>
+              <button class="suggestion" type="button" data-fill="Объясни простыми словами: ">
+                <svg viewBox="0 0 24 24" aria-hidden="true" style="--icon:var(--green)"><path d="M3 6.5 12 3l9 3.5-9 3.5z"/><path d="M7 8.5V14c0 1.5 2.2 3 5 3s5-1.5 5-3V8.5M21 6.5V12"/></svg>
+                <span class="suggestion-text"><span>Объяснить сложное</span><small>простыми словами</small></span>
+              </button>
+              <button class="suggestion" type="button" data-fill="Давай проведём Тьюринг-баттл">
+                <svg viewBox="0 0 24 24" aria-hidden="true" style="--icon:var(--violet)"><path d="M4 5h10a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H9l-4 3v-3H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M19 9h1a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-1v3l-4-3h-3"/></svg>
+                <span class="suggestion-text"><span>Тьюринг-баттл</span><small>угадай, кто здесь ИИ</small></span>
               </button>
             </div>
-          </div>
+          </section>
 
-          <textarea id="composerInput" rows="1" maxlength="500" placeholder="Напиши что-нибудь…" aria-label="Сообщение Mira"></textarea>
-          <span class="character-count" id="characterCount" aria-live="polite"></span>
-          <button class="send-button" id="sendButton" type="submit" aria-label="Отправить сообщение" disabled>
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m4 12 15-7-4 14-3.2-5.2L4 12Z"/><path d="m11.8 13.8 3.6-4"/></svg>
-          </button>
+          <div class="messages" id="messages" aria-label="Диалог с Mira"></div>
+        </div>
+      </div>
+
+      <button class="to-bottom" id="toBottom" type="button" aria-label="К последнему сообщению" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+      </button>
+
+      <footer class="dock" id="dock">
+        <div class="archive-bar" id="archiveBar" hidden>
+          <span>Это сохранённый диалог — продолжить его нельзя, Mira не помнит его контекст.</span>
+          <button class="btn btn-ink" id="archiveNewChat" type="button">Новый чат</button>
+        </div>
+
+        <form class="composer" id="composer" data-state="idle" novalidate>
+          <label class="visually-hidden" for="composerInput">Сообщение для Mira</label>
+          <textarea id="composerInput" rows="1" maxlength="500" placeholder="Спросите что угодно…" enterkeyhint="send" autocomplete="off"></textarea>
+          <div class="composer-row">
+            <button class="tool-btn round" id="attachButton" type="button" aria-label="Прикрепить файл" data-feature="attach">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+            <input class="visually-hidden" id="fileInput" type="file" tabindex="-1" aria-hidden="true"
+              accept=".txt,.md,.markdown,.csv,.tsv,.json,.log,.py,.js,.mjs,.ts,.tsx,.jsx,.html,.css,.xml,.yaml,.yml,.ini,.toml,.sql,.sh,.bat,.ps1,.java,.c,.cpp,.h,.cs,.go,.rs,.rb,.php,.kt,.swift,text/*">
+            <button class="tool-btn chip" id="searchToggle" type="button" aria-pressed="false" data-feature="search">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/></svg>
+              Поиск
+            </button>
+            <button class="tool-btn chip" id="thinkToggle" type="button" aria-pressed="false" aria-label="Подумать глубже" data-feature="think">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></svg>
+              <span class="chip-label">Подумать глубже</span>
+            </button>
+            <span class="char-count" id="charCount" aria-live="polite"></span>
+            <button class="tool-btn round plain" id="voiceButton" type="button" aria-label="Голосовой ввод" aria-pressed="false" data-feature="voice">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+            </button>
+            <button class="voice-mode-btn" id="voiceModeButton" type="button" aria-label="Голосовой режим" aria-pressed="false" data-feature="voice">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10v4M9.5 7v10M14.5 9v6M19 11v2"/></svg>
+            </button>
+            <button class="send-btn" id="sendButton" type="submit" aria-label="Отправить" disabled>
+              <svg class="i-send" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+              <svg class="i-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="3"/></svg>
+            </button>
+          </div>
         </form>
+
+        <p class="disclaimer">Mira может ошибаться. Проверяйте важное.</p>
       </footer>
     </main>
   </div>
 
-  <template id="userMessageTemplate">
-    <div class="message-row user-row"><div class="user-bubble"></div></div>
-  </template>
+  <div class="menu row-menu" id="rowMenu" role="menu" aria-label="Действия с чатом" hidden>
+    <button class="menu-item" type="button" role="menuitem" data-row-action="share">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg>
+      Поделиться
+    </button>
+    <button class="menu-item" type="button" role="menuitem" data-row-action="rename">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></svg>
+      Переименовать
+    </button>
+    <div class="menu-sep" role="separator"></div>
+    <button class="menu-item danger" type="button" role="menuitem" data-row-action="delete">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
+      Удалить
+    </button>
+  </div>
 
-  <template id="assistantMessageTemplate">
-    <article class="message-row assistant-row">
-      <img class="assistant-mark" src="/assets/mira-mark-cobalt.png" alt="">
-      <div class="assistant-content">
-        <div class="assistant-label">Mira</div>
-        <div class="assistant-text"></div>
-        <div class="message-meta">
-          <button class="copy-button" type="button" aria-label="Скопировать ответ">
-            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="6.5" y="6.5" width="9" height="9" rx="2"/><path d="M13.5 6V5a2 2 0 0 0-2-2h-6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h1"/></svg>
-          </button>
-          <span class="response-time"></span>
-        </div>
+  <!-- ───────────── Диалоги ───────────── -->
+  <dialog class="modal" id="renameDialog" aria-labelledby="renameTitle">
+    <form method="dialog" class="modal-body" id="renameForm">
+      <h2 class="modal-title" id="renameTitle">Переименовать чат</h2>
+      <label class="visually-hidden" for="renameInput">Название чата</label>
+      <input class="field" id="renameInput" type="text" maxlength="80" autocomplete="off">
+      <div class="modal-actions">
+        <button class="btn btn-ghost" type="button" id="renameCancel">Отмена</button>
+        <button class="btn btn-primary" type="submit" value="save">Сохранить</button>
       </div>
-    </article>
-  </template>
+    </form>
+  </dialog>
 
-  <template id="thinkingTemplate">
-    <article class="message-row assistant-row thinking-row" aria-live="polite">
-      <img class="assistant-mark" src="/assets/mira-mark-cobalt.png" alt="">
-      <div class="thinking-content">
-        <strong>Mira думает</strong>
-        <span class="thinking-dots" aria-label="Mira формирует ответ"><i></i><i></i><i></i></span>
+  <dialog class="modal" id="memoryDialog" aria-labelledby="memoryTitle">
+    <div class="modal-body">
+      <div class="modal-head">
+        <span class="memory-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M6 4.8A1.8 1.8 0 0 1 7.8 3h8.4A1.8 1.8 0 0 1 18 4.8V21l-6-3.8L6 21z"/><path d="m9 10.5 2 2 4-4"/></svg>
+        </span>
+        <h2 class="modal-title" id="memoryTitle">Память Mira</h2>
+        <button class="icon-btn" type="button" id="memoryClose" aria-label="Закрыть">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
       </div>
-    </article>
-  </template>
+      <p class="modal-text">Mira запоминает то, что вы сами о себе рассказываете или просите сохранить. Память живёт до начала нового чата.</p>
+      <ul class="memory-list" id="memoryList"></ul>
+    </div>
+  </dialog>
 
-  <script src="/app.js?v=10" defer></script>
+  <script src="/app.js?v=24" defer></script>
 </body>
 </html>
