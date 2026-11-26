@@ -1,0 +1,1 @@
+{"name": "intent_baseline", "model": "runs\\baseline_v1\\intent.pt", "threshold": 0.4, "labels_in_model": 1028, "n": 383, "covered": 383, "accuracy_on_covered": 0.6945, "accuracy_on_all": 0.6945, "macro_f1_on_covered": 0.6719, "share_above_threshold": 0.6345, "precision_above_threshold": 0.9342}

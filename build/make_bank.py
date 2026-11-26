@@ -500,6 +500,10 @@ for it in HALL + TEAM + I:  # questions are matched after ё→е, so patterns m
         it["not"] = [x.replace("ё", "е") for x in it["not"]]
 
 out = Path(__file__).resolve().parents[1] / "config" / "bank.json"
+import sys as _sys
+if out.exists() and "_profile" in json.loads(out.read_text(encoding="utf-8")) and "--force" not in _sys.argv:
+    out = out.with_name("bank.built.json")   # рабочий bank.json выпущен из пакета v2: не затираем его молча
+    print("config/bank.json — выпущенный профиль v2, сборка записана в config/bank.built.json (перезаписать: --force)")
 out.write_text(json.dumps({"_note": "Стартовый банк реплик Миры (черновик). Перепишите ответы своими словами и добавляйте темы. Шаблоны — regex по тексту в нижнем регистре, ё→е.",
                            "intents": HALL + TEAM + I}, ensure_ascii=False, indent=1), encoding="utf-8")
 print(len(I), "intents ->", out)

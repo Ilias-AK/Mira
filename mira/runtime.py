@@ -145,6 +145,16 @@ def topic_phrase(text):
         return None
     return t
 
+
+ASKS_FOREIGN = re.compile(r"англ|english|переве|перевод|по-?казахски|қазақ|на\s+казахском|скажи\s+на\s+\w+ском", re.IGNORECASE)
+
+
+def foreign_answer(answer, question):
+    """An answer that is mostly not Cyrillic, for a question that did not ask for another language."""
+    letters = re.findall(r"[A-Za-zА-Яа-яЁё]", answer)
+    latin = sum(1 for c in letters if c.isascii())
+    return bool(letters) and latin / len(letters) > 0.5 and not ASKS_FOREIGN.search(question)
+
 class MiraRuntime:
     def __init__(self, persona_path, bank_path, fallbacks_path, index_path=None, *, retriever=None,
                  use_retrieval=True, retrieval_k=40, min_context_similarity=0.55, min_retrieval_score=3.5,
@@ -238,10 +248,13 @@ class MiraRuntime:
                 best, score = item, value
         if best is None or score < 0.7:
             return None
-        key = self._pin_key("bank", best["id"], best.get("topic"))
+        key = self._pin_key("bank", best.get("pin") or best["id"], best.get("topic"))
         if self._pinned_repeat(key):
             return None
-        choice = self._pick(best["answers"], best["id"] + text, allow_question=True)   # the team's own wording
+        answers = [a for a in best["answers"] if not foreign_answer(a, text)]
+        if not answers:
+            return None
+        choice = self._pick(answers, best["id"] + text, allow_question=True)   # the team's own wording
         if not choice:
             return None
         self._pending_pin = key
@@ -283,7 +296,7 @@ class MiraRuntime:
             if rest:
                 return ("Привет! " + rest if turn_index == 0 else rest), item
         for item in self.bank.match([to_ty(text), text], self._recent_topics(), turn_index, self.mode):
-            key = self._pin_key("bank", item["id"], item.get("topic"))
+            key = self._pin_key("bank", item.get("pin") or item["id"], item.get("topic"))
             again = self._pinned_repeat(key)
             if again:
                 return again, item
@@ -300,6 +313,9 @@ class MiraRuntime:
         follow = self._followup_reply(original)
         if follow:
             return follow
+        told = self._reaction_to_user_fact(original)
+        if told:
+            return told
         fav = self.generic.favorite(question, self.seed)
         short = re.match(r"^\W*(?:ну\s+)?а\s+([а-яё]+(?:\s+[а-яё]+)?)\W*$", norm(question))
         if not fav and short and self.topics and self.topics[-1] in ("favorite", "football", "anime"):
@@ -448,6 +464,8 @@ class MiraRuntime:
         predicted = self._predict(text)
         agrees = predicted is not None and predicted[0] == item["id"] and predicted[1] >= 0.35
         need = 0.55 if item.get("after") else 0.62
+        if item.get("source") == "retrieval_v2":
+            need = 0.75   # new_topics: only near-exact matches, never as a guess
         content_words = [w for w in re.findall(r"[а-яё]+", to_ty(text)) if len(w) > 2]
         if len(content_words) < 2:
             need = max(need, 0.9)    # one word ("шарага?") is too little to recognise a topic
@@ -455,11 +473,14 @@ class MiraRuntime:
             need, agrees = 0.85, False   # "X или Y?" is a choice, not a question about X alone
         if score < need and not (agrees and score >= 0.4):
             return None
-        key = self._pin_key("bank", item["id"], item.get("topic"))
+        key = self._pin_key("bank", item.get("pin") or item["id"], item.get("topic"))
         again = self._pinned_repeat(key)
         if again:
             return again, "repeat_topic:" + item["id"], item.get("topic")
-        choice = self._pick(item["answers"], item["id"] + text, allow_question=True)   # the team's own wording
+        answers = [a for a in item["answers"] if not foreign_answer(a, text)]
+        if not answers:
+            return None
+        choice = self._pick(answers, item["id"] + text, allow_question=True)   # the team's own wording
         if not choice:
             return None
         self._pending_pin = key
@@ -499,16 +520,43 @@ class MiraRuntime:
             return None
         if item.get("mode") and item["mode"] != self.mode:
             return None
-        key = self._pin_key("bank", item["id"], item.get("topic"))
+        if item.get("after") and not set(item["after"]) & set(self._recent_topics()):
+            return None   # a follow-up topic ("По какому предмету?") only right after its own question
+        key = self._pin_key("bank", item.get("pin") or item["id"], item.get("topic"))
         again = self._pinned_repeat(key)
         if again:
             return again, "repeat_topic:" + item["id"], item.get("topic")
-        choice = self._pick(item["answers"], item["id"] + text, allow_question=bool(item.get("ask")))
+        choices = [a for a in item["answers"] if not foreign_answer(a, text)]
+        if not choices:
+            return None   # e.g. "I'm tired" for a question that never asked for English
+        choice = self._pick(choices, item["id"] + text, allow_question=bool(item.get("ask")))
         if not choice:
             return None
         self._pending_pin = key
         self._keep_question = bool(item.get("ask"))
         return choice, f"model:{item['id']}", item.get("topic")
+
+    def _reaction_to_user_fact(self, text):
+        """The user shares something about themselves: react to it instead of answering a question nobody asked."""
+        if "?" in text:
+            return None
+        q = norm(text)
+        mine = re.match(r"^\W*(?:а\s+)?(?:мой|моя|мое|мои)\s+(?:самы[йяе]\s+)?любим\w*\s+([а-я]+)\s*[-—:]?\s*(?:это\s+)?(.+?)\W*$", q)
+        if mine:
+            hers = self.generic.favorite(f"какой твой любимый {mine.group(1)}?", self.seed)
+            if hers:
+                theirs = mine.group(2)
+                hers_clean = re.sub(r"(?i)^(?:сейчас|наверное|наверно)\s+", "", hers.strip().rstrip(".")).strip()
+                if theirs[:4] and theirs[:4] in norm(hers_clean):
+                    return "О, у меня тоже!", "user_fact", "favorite"
+                return f"Хороший выбор. А у меня {hers_clean}", "user_fact", "favorite"
+        pet = re.match(r"^\W*(?:а\s+)?у\s+меня\s+(?:есть\s+)?(кот|кошка|котик|собака|пес|щенок|хомяк|попугай)\w*\s+(?:по\s+имени\s+|зовут\s+)?([а-я]{2,})\W*$", q)
+        if pet:
+            name = pet.group(2).capitalize()
+            if pet.group(1).startswith("ко"):
+                return f"О, котик! {name} — классное имя. У моих родителей тоже кошка, Мурка", "user_fact", "pets"
+            return f"{name} — классное имя. А у моих родителей кошка Мурка", "user_fact", "pets"
+        return None
 
     def _topic_fallback(self, question):
         """Last resort that still answers *about* what was asked, in the asker's own words."""
@@ -749,6 +797,10 @@ class MiraRuntime:
                                     "id": best[2].get("id")})
             elif best:
                 diagnostics["best_rejected_score"] = round(best[0], 3)
+        if text is None and self.dialog.user:
+            remembered = self.dialog.recall_user(question, self._formal(question), relaxed=True)
+            if remembered and not remembered.startswith(("Вы мне этого", "Ты мне этого")):
+                text, route, topic = remembered, "user_memory", "user_memory"
         if text is None:
             topical = self._topic_fallback(question)
             if topical:

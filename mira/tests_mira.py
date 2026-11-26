@@ -1,7 +1,7 @@
 """Quick self-check for Mira (no GPU, no index needed): python tests_mira.py"""
 import json, sys
 from pathlib import Path
-HERE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parents[1]   # корень проекта: config/ и пакет mira/ (не устаревшая копия mira/mira)
 sys.path.insert(0, str(HERE))
 from mira.runtime import MiraRuntime
 

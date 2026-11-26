@@ -77,6 +77,11 @@ def main():
     p.add_argument("--rounds", default="data/team_raw/rounds_*.txt")
     p.add_argument("--paraphrases", default="data/team_raw/paraphrases_*.txt")
     p.add_argument("--out", default="runs/mira_intent/intent.pt")
+    p.add_argument("--extra-train", action="append", default=[],
+                   help="JSONL {text,label}: extra training questions (e.g. data/delivery_v2/intent/train.jsonl)")
+    p.add_argument("--val-file", help="JSONL {text,label}: independent validation, only measured, never trained on "
+                                      "and never used to pick the epoch")
+    p.add_argument("--no-rounds", action="store_true", help="skip rule-labelled rounds")
     p.add_argument("--epochs", type=int, default=40)
     p.add_argument("--batch-size", type=int, default=64)
     p.add_argument("--seed", type=int, default=7)
@@ -97,7 +102,7 @@ def main():
     known = {item["id"] for item in bank.intents}
     round_files = sorted(glob.glob(args.rounds))
     para_files = sorted(f for f in glob.glob(args.paraphrases) if not f.endswith("template.txt"))
-    rows = label_by_rules(bank, read_rounds(round_files))
+    rows = [] if args.no_rounds else label_by_rules(bank, read_rounds(round_files))
     qa_rows = [(x, item["id"], item.get("file", "team_qa")) for item in bank.intents
                if item.get("source") == "team_qa" for x in item.get("examples", [])]
     rows += qa_rows
@@ -108,6 +113,24 @@ def main():
     print(f"Примеров: {len(rows)} (из раундов {len(rows) - len(para_rows)}, перефразов {len(para_rows)})")
     if unknown:
         print("Неизвестные темы в перефразах (проверьте id):", dict(unknown.most_common(10)))
+    extra_rows = []
+    for path in args.extra_train:
+        for line in Path(path).read_text(encoding="utf-8-sig").splitlines():
+            if line.strip():
+                r = json.loads(line)
+                if r["label"] in known:
+                    extra_rows.append((r["text"], r["label"], Path(path).name))
+    rows += extra_rows
+    print(f"Дополнительных примеров: {len(extra_rows)} из {args.extra_train}")
+    external = []
+    if args.val_file:
+        import re as _re
+        _n = lambda t: _re.sub(r"[^\w]+", " ", t.lower().replace("ё", "е")).strip()
+        external = [json.loads(l) for l in Path(args.val_file).read_text(encoding="utf-8-sig").splitlines() if l.strip()]
+        val_texts = {_n(r["text"]) for r in external}
+        before = len(rows)
+        rows = [r for r in rows if _n(r[0]) not in val_texts]   # validation never leaks into training
+        print(f"Внешняя проверка: {len(external)} вопросов; из обучения убрано совпадений: {before - len(rows)}")
     rows = list(dict.fromkeys(rows))
     by_label = defaultdict(list)
     for text, label, source in rows:
@@ -191,8 +214,28 @@ def main():
             if kept and sum(kept) / len(kept) >= 0.9:
                 threshold = max(0.4, t)
                 break
+    external_report = None
+    if external:
+        known_ext = [(r["text"], index[r["label"]]) for r in external if r["label"] in index]
+        ext_acc, ext_probs = evaluate(known_ext)
+        preds = [max(range(len(p)), key=p.__getitem__) for p in ext_probs]
+        gold = [y for _, y in known_ext]
+        f1s = []
+        for label in set(gold):
+            tp = sum(1 for g, q in zip(gold, preds) if g == label and q == label)
+            fp = sum(1 for g, q in zip(gold, preds) if g != label and q == label)
+            fn = sum(1 for g, q in zip(gold, preds) if g == label and q != label)
+            pr, rc = (tp / (tp + fp) if tp + fp else 0), (tp / (tp + fn) if tp + fn else 0)
+            f1s.append(2 * pr * rc / (pr + rc) if pr + rc else 0)
+        confident = [(q == g) for p, q, g in zip(ext_probs, preds, gold) if max(p) >= threshold]
+        external_report = {"file": args.val_file, "n": len(external), "covered_labels": len(known_ext),
+                           "accuracy": round(ext_acc, 4), "macro_f1": round(sum(f1s) / len(f1s), 4) if f1s else 0,
+                           "share_above_threshold": round(len(confident) / len(known_ext), 4) if known_ext else 0,
+                           "precision_above_threshold": round(sum(confident) / len(confident), 4) if confident else 0}
+        print("Внешняя проверка:", json.dumps(external_report, ensure_ascii=False))
     report = {"examples": len(rows), "topics": len(labels), "train_rows": len(train), "val_rows": len(val),
-              "val_accuracy": acc, "threshold": threshold, "checkpoint": args.checkpoint,
+              "val_accuracy": acc, "threshold": threshold, "checkpoint": args.checkpoint, "seed": args.seed,
+              "epochs": args.epochs, "extra_train": args.extra_train, "external_validation": external_report,
               "round_files": round_files, "paraphrase_files": para_files, "seconds": round(time.time() - started)}
     save(args.out, net, labels, checkpoint["model_config"], tokenizer_hash(args.tokenizer), threshold, report)
     Path(args.out).with_suffix(".json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")

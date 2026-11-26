@@ -29,7 +29,8 @@ RECALL_CUE = re.compile(
     r"|\b(?:что|кем|где|куда|откуда|когда|сколько|чем|с\s+кем|как)\s+(?:же\s+)?(?:я|мне|меня)\b"
     r"|\bкак\s+зовут\s+мо\w+\b|\bкакой\s+(?:у\s+меня|мой)\b|\bкакая\s+(?:у\s+меня|моя)\b|\bкакое\s+(?:у\s+меня|мое)\b"
     r"|\bкакие\s+(?:у\s+меня|мои)\b|\bчто\s+у\s+меня\b|\bкто\s+(?:у\s+меня|мой|моя)\b"
-    r"|\b(?:что|кем|где|куда|откуда|когда|сколько|чем|как|какой|какая|какое|кто)\b[^?]*\b(?:мой|моя|мое|моё|мои|моего|мою|моей|моему|моих|моим)\b")
+    r"|\b(?:что|кем|где|куда|откуда|когда|сколько|чем|как|какой|какая|какое|кто)\b[^?]*\b(?:мой|моя|мое|моё|мои|моего|мою|моей|моему|моих|моим)\b"
+    r"|\b(?:что|куда|где|когда|какой|какая|какое|какую|каким|с\s+кем|кого|чем|сколько|зачем|почему)\b[^?]*\bя\s+\w+(?:л|ла|ли|ю|у|усь|юсь)\b")
 STRONG_CUE = re.compile(r"\bкак\s+зовут\s+мо\w+|\bпомнишь\b|\bнапомни\b|\bя\s+(?:тебе\s+)?(?:говорил\w*|рассказывал\w*)\b|\bкакой\s+мой\b|\bкакая\s+моя\b|\bкак\s+меня\s+зовут\b|\bсколько\s+мне\s+лет\b|\bоткуда\s+я\b")
 QUOTE_CUE = re.compile(r"\bчто\s+я\s+(?:тебе\s+)?(?:говорил\w*|рассказывал\w*|сказал\w*|писал\w*)\s+(?:про|о|об|насчет)\b")
 SYNONYMS = {"нрав": "люб", "обож": "люб", "любл": "люб", "любим": "люб", "работ": "работ", "учус": "уч", "учит": "уч",
@@ -90,10 +91,18 @@ class DialogMemory:
             return quoted.group(1).capitalize() if quoted else note[:1].upper() + note[1:]
         return None
 
-    def recall_user(self, question: str, formal: bool):
+    def recall_user(self, question: str, formal: bool, relaxed: bool = False):
+        """relaxed: the question has no "я/мой" but clearly continues something the user said
+        ("по какому предмету экзамен?" after "завтра у меня экзамен по физике")."""
         q = to_ty(question)
-        if not RECALL_CUE.search(q) or re.search(r"\b(?:ты|тебя|тебе|твой|твоя|твое|твои|твою|твоего)\b", q):
+        if re.search(r"\b(?:ты|тебя|тебе|твой|твоя|твое|твои|твою|твоего)\b", q):
             return None     # a question about Mira, not about the asker
+        if not RECALL_CUE.search(q):
+            if not relaxed or not self.user or not re.search(r"\?|^\W*(?:что|какой|какая|какое|какую|какие|по\s+какому|на\s+какой|в\s+какой|где|куда|когда|сколько|кто|кого|с\s+кем)\b", q):
+                return None
+            q_long = {stem(w) for w in content(q) if len(w) >= 5}
+            if not any(q_long & {stem(w) for w in content(item["text"])} for item in self.user[-8:]):
+                return None
         not_told = "Вы мне этого не говорили" if formal else "Ты мне этого не говорил{|а}"
         if not self.user:
             first_person = re.search(r"\b(?:я|мне|меня|мной|мой|моя|мое|мои|моего|мою|моей|моих|мы|нас|наш\w*)\b", q)
