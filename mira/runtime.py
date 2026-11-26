@@ -21,6 +21,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+from functools import lru_cache
 
 from mira.bank import Bank, cosine, fill_gender, grams, norm
 from mira.filters import clean, mentioned, persona_problem, score as fit_score, turn_problem, content_words
@@ -30,6 +31,7 @@ from mira.generic import Generic
 from mira.frames import frame_answer, frame_key
 from mira.dialog_memory import DialogMemory
 from mira.hall import to_ty, hall_style, clock_answer, constraint, apply_constraint
+from mira.round_memory import RoundMemory
 import copy
 
 try:  # the team's arena package (present in D:\turing-arena)
@@ -76,7 +78,7 @@ PROPER = {"мира", "гульмира", "гульмайра", "ену", "ко�
 LAST_Q = re.compile(r"\bкакой\s+(?:был\s+)?(?:мой\s+|прошлый\s+|предыдущий\s+|последний\s+){1,2}вопрос\b|\bчто\s+(?:я|тебя)\s+(?:только\s+что|сейчас|до\s+этого|в\s+прошлый\s+раз)\s+спрашивал?\w*|\bповтори\s+(?:мой\s+)?(?:последний\s+|прошлый\s+|предыдущий\s+)?вопрос\b|\bо\s+ч[её]м\s+я\s+(?:только\s+что\s+)?спрашивал\w*")
 BEFORE_Q = re.compile(r"^\W*(?:а\s+)?(?:до\s+(?:него|этого)|перед\s+(?:ним|этим)|а\s+ещ[её]\s+раньше|ещ[её]\s+раньше)\W*$")
 FIRST_Q = re.compile(r"\bкакой\s+(?:был\s+)?(?:самый\s+)?первый\s+вопрос\b")
-LAST_A = re.compile(r"\bчто\s+ты\s+(?:только\s+что\s+)?ответила\b|\bповтори\s+(?:свой\s+|твой\s+)?(?:последний\s+|прошлый\s+|предыдущий\s+)?ответ\b|\bчто\s+ты\s+(?:сказала|написала)\s+(?:до\s+этого|в\s+прошлый\s+раз|только\s+что)")
+LAST_A = re.compile(r"\bчто\s+ты\s+(?:только\s+что\s+)?ответила\b(?!\s+(?:про|о|об|насч[её]т|на)\b)|\bповтори\s+(?:свой\s+|твой\s+)?(?:последний\s+|прошлый\s+|предыдущий\s+)?ответ\b|\bчто\s+ты\s+(?:сказала|написала)\s+(?:до\s+этого|в\s+прошлый\s+раз|только\s+что)")
 COUNT_Q = re.compile(r"\bсколько\s+(?:вопросов|раз)\s+(?:тебе\s+)?(?:уже\s+)?(?:задали|спросили)\b")
 
 
@@ -140,6 +142,12 @@ INTERJECTIONS = {"вот", "так", "ну", "и", "да", "нет", "капец
 def topic_phrase(text):
     """The user's own words for the topic, cleaned for quoting back ("рецепт борща", "3 закона ньютона")."""
     t = re.sub(r"\s+", " ", re.sub(r"[?!.…]+$", "", text.strip())).strip(" ,:-—")
+    if t.count("«") > t.count("»"):
+        t += "»"      # REQUEST's trailing \W* eats the closing quote of «окно»
+    elif t.count("»") > t.count("«"):
+        t = "«" + t   # ...and the leading \W* the opening one of «дружба»
+    if t.count("„") > t.count("“"):
+        t += "“"
     words = t.split()
     if not words or len(words) > 5 or len(t) > 45 or re.search(r"[<>{}\\]", t):
         return None
@@ -154,6 +162,100 @@ def foreign_answer(answer, question):
     letters = re.findall(r"[A-Za-zА-Яа-яЁё]", answer)
     latin = sum(1 for c in letters if c.isascii())
     return bool(letters) and latin / len(letters) > 0.5 and not ASKS_FOREIGN.search(question)
+
+
+def latin_dominant(text):
+    """The contest wants Russian answers: mostly Latin letters is never shown, even for a translation request."""
+    letters = re.findall(r"[A-Za-zА-Яа-яЁё]", text)
+    return bool(letters) and sum(1 for c in letters if c.isascii()) / len(letters) > 0.5
+
+
+HUMAN_Q = re.compile(r"^\W*(?:а\s+|ну\s+|так\s+)?(?:ты|вы)\s+(?:(?:точно|правда|вообще|действительно|всё-таки|все-таки|живой|живая|настоящий|настоящая|реальный|реальная)\s+)*человек\s*\??\W*$")
+EITHER_HUMAN = re.compile(r"\bчеловек\s+или\s+(?:бот|робот|ии|машина|нейросеть|программа)\b|\b(?:бот|робот|ии|машина|нейросеть|программа)\s+или\s+человек\b")
+
+
+@lru_cache(maxsize=512)
+def human_question(question):
+    """'yes' for «Ты человек?» (the answer must start with «Да»), 'either' for «Человек или бот?», else None."""
+    q = to_ty(question)
+    if EITHER_HUMAN.search(q):
+        return "either"
+    if HUMAN_Q.search(q):
+        return "yes"
+    return None
+
+
+def fit_polarity(answer, polarity):
+    """Keeps an existing reply only if its yes/no fits the question; «Нет, я человек» -> «Да, я человек»."""
+    if not polarity:
+        return answer
+    no_lead = re.match(r"^\s*Нет\s*[,.!]?\s*", answer)
+    if re.search(r"\bно\s+нет\b", answer, re.IGNORECASE):
+        return None
+    if not no_lead:
+        return answer
+    rest = answer[no_lead.end():]
+    affirms = re.match(r"(?i)я\s+(?:человек|настоящ|жив)", rest)
+    if not affirms:
+        return None
+    if polarity == "yes":
+        return "Да, " + rest
+    return rest[:1].upper() + rest[1:]
+
+
+NUMBER_WORD = re.compile(r"\b(?:ноль|два|две|три|четыре|пять|шесть|семь|восемь|девять|десять|"
+                         r"одиннадцать|двенадцать|двадцать|тридцать|сорок|пятьдесят|сто)\b")
+
+
+def number_conflict(answer, question):
+    """A reply naming numbers the question never had, while the question brings its own numbers
+    («На столе четыре яблока… Сколько у вас?» -> «391 вроде» from another team's arithmetic)."""
+    said = set(re.findall(r"\d+", answer))
+    if not said:
+        return False
+    q = norm(question)
+    if not (re.search(r"\d", q) or NUMBER_WORD.search(q)):
+        return False
+    return not said <= set(re.findall(r"\d+", q))
+
+
+STOP_WORDS = set("""ты тебя тебе тобой твой твоя твое твои твоего твоей твоих вы вас вам ваш ваша я мне меня мой моя мое мои
+что как какой какая какое какие каком какую каких где когда куда откуда почему зачем сколько кто кого кому чем чего
+это этот эта эти тот та то там тут здесь или для если есть был была было были быть будет очень можно нужно надо
+вообще уже еще ещё только просто сейчас самый самая самое так такой такая также тоже же ли бы вот все всё весь
+про над под при без после перед между через из от до на по за для него нее неё них его ее её их они она оно он
+умеешь можешь знаешь любишь думаешь считаешь скажи расскажи назови объясни опиши
+да нет коротко кратко честно серьезно двух словах одним словом тема теме темы скажешь относишься""".split())
+
+
+def significant(text):
+    return [w for w in re.findall(r"[а-яё]+", norm(to_ty(text))) if len(w) >= 3 and w not in STOP_WORDS]
+
+
+def _stem(word):
+    return word[:5] if len(word) > 5 else word
+
+
+def lexical_fit(question, item):
+    """A topic found by similarity or by the model must share words with the question.
+
+    A word in quotes («окно») has to occur in the topic; with three or more significant words
+    at least a third of them must."""
+    hay_text = norm(" ".join(item.get("examples", []) + item.get("answers", [])))
+    hay = {_stem(w) for w in re.findall(r"[а-яё]+", hay_text)}
+    for quoted in re.findall(r"[«\"„]([^»\"“]{2,40})[»\"“]", question):
+        words = [w for w in re.findall(r"[а-яё]+", norm(quoted)) if len(w) >= 3]
+        if words and not any(_stem(w) in hay for w in words):
+            return False
+    words = significant(question)
+    if len(words) >= 3:
+        covered = sum(1 for w in words if _stem(w) in hay)
+        return covered / len(words) >= 0.33   # one word of three is enough
+    return True
+
+
+COMPARE = re.compile(r"\bчем\s+.+?\s+отлича\w*\s+от\b|\bв\s+ч[её]м\s+(?:разница|отличие)\b|\bразница\s+между\b|\bотлича\w*\s+.+?\s+от\b")
+QWORD_FIXES = {"почему", "зачем", "сколько", "откуда"}   # long enough that one letter off is still unambiguous («какао» ≠ «какая»)
 
 class MiraRuntime:
     def __init__(self, persona_path, bank_path, fallbacks_path, index_path=None, *, retriever=None,
@@ -206,6 +308,8 @@ class MiraRuntime:
         self._repeat_hit = False
         self.facts = UserFacts()
         self.counting = CountingState()
+        self.round = RoundMemory()
+        self._polarity, self._asked, self._round_declared = None, None, False
         if hasattr(self, "generic"):
             self.generic.reset()
         self.memory = ConversationMemory(persona={"facts": self.profile.get("facts", []),
@@ -233,11 +337,44 @@ class MiraRuntime:
         # (so "А специальность?" follows "На каком ты курсе?" even when a rule answered it)
         return self.topics[-2:] + [a for group in self.aliases[-2:] for a in group]
 
-    def _followup_reply(self, text):
+    def _matches(self, text, turn_index=None):
+        """bank.match for this question, computed once per question (followup and bank both need it)."""
+        if turn_index is None:
+            turn_index = sum(1 for t in self.history if t["role"] == "user")
+        key = (text, turn_index, tuple(self._recent_topics()))
+        if getattr(self, "_match_cache", (None,))[0] != key:
+            self._match_cache = (key, self.bank.match([to_ty(text), text], self._recent_topics(), turn_index, self.mode))
+        return self._match_cache[1]
+
+    def _answers_for(self, item, question, check_numbers=True):
+        """Existing replies of a topic that fit this question: Russian (unless asked), right yes/no, no foreign numbers.
+
+        check_numbers=False for regex rules: a rule written for this very question («28 дней») knows its numbers."""
+        polarity = (getattr(self, "_polarity", None) if item.get("topic") == "bot" else None) or human_question(question)
+        out = []
+        for a in item["answers"]:
+            if foreign_answer(a, question) or latin_dominant(a) or (check_numbers and number_conflict(a, getattr(self, "_asked", question))):
+                continue
+            fitted = fit_polarity(a, polarity) if polarity else a
+            if fitted:
+                out.append(fitted)
+        return out
+
+    def _key_for(self, item, question, kind="bank"):
+        """Pin key of a topic; «ты человек?» gets its own, so «Я же уже говорила: нет…» never answers it."""
+        ident = item.get("pin") or item["id"]
+        if human_question(question):
+            ident += ":human"
+        return self._pin_key(kind, ident, item.get("topic"))
+
+    def _followup_reply(self, text, need=None):
         """A team-written follow-up ("Дальше:") right after its question: checked before the rules."""
         recent = set(self._recent_topics())
         if not recent:
             return None
+        if need is None:
+            strong = any(item.get("priority", 0) >= 2 for item in self._matches(text))
+            need = 0.85 if strong else 0.7   # «Ты человек?» after «Ты бот?» is the hall rule, not «Докажи…»
         q = grams(text)
         best, score = None, 0.0
         for item in self.bank.intents:
@@ -246,12 +383,12 @@ class MiraRuntime:
             value = max((cosine(q, grams(e)) for e in item.get("examples", [])), default=0.0)
             if value > score:
                 best, score = item, value
-        if best is None or score < 0.7:
+        if best is None or score < need:
             return None
-        key = self._pin_key("bank", best.get("pin") or best["id"], best.get("topic"))
-        if self._pinned_repeat(key):
-            return None
-        answers = [a for a in best["answers"] if not foreign_answer(a, text)]
+        key = self._key_for(best, text)
+        if key and key in self.pinned:
+            return None      # no side effect here: the rules below decide how to answer a repeat
+        answers = self._answers_for(best, text)
         if not answers:
             return None
         choice = self._pick(answers, best["id"] + text, allow_question=True)   # the team's own wording
@@ -286,7 +423,10 @@ class MiraRuntime:
         if key and key in self.pinned:
             self._repeat_hit = True
             lead = ["Я же уже говорила:", "Уже отвечала:", "Как я уже говорила,"][len(self.history) // 2 % 3]
-            return f"{lead} {self._lower_first(self.pinned[key])}"
+            said = self.pinned[key]
+            if getattr(self, "_polarity", None) == "either":
+                said = re.sub(r"^Да,\s*", "", said)     # «Человек или бот?» is not a yes/no question
+            return f"{lead} {self._lower_first(said)}"
         return None
 
     def _bank_reply(self, text, turn_index):
@@ -295,20 +435,49 @@ class MiraRuntime:
             rest, item = self._bank_reply(text[greeting.end():], turn_index)
             if rest:
                 return ("Привет! " + rest if turn_index == 0 else rest), item
-        for item in self.bank.match([to_ty(text), text], self._recent_topics(), turn_index, self.mode):
-            key = self._pin_key("bank", item.get("pin") or item["id"], item.get("topic"))
+        compare = COMPARE.search(to_ty(text))
+        for item in self._matches(text, turn_index):
+            if compare and item.get("priority", 0) <= 0:
+                continue     # «Чем бешбармак отличается от плова?» is not «Пробовала, конечно»
+            key = self._key_for(item, text)
             again = self._pinned_repeat(key)
             if again:
                 return again, item
-            choice = self._pick(item["answers"], item["id"] + text, allow_question=bool(item.get("ask")))
+            answers = self._answers_for(item, text, check_numbers=False)
+            if not answers:
+                continue
+            choice = self._pick(answers, item["id"] + text, allow_question=bool(item.get("ask")))
             if choice:
                 self._pending_pin = key
                 self._keep_question = bool(item.get("ask"))
                 return choice, item
         return None, None
 
+    def _fix_question_words(self, text):
+        """«пачему зимой…» -> «почему зимой…»: only misspelt question words (one letter off), nothing else."""
+        def one_off(a, b):
+            if a == b or abs(len(a) - len(b)) > 1 or a[0] != b[0]:
+                return False
+            if len(a) == len(b):
+                diff = [i for i in range(len(a)) if a[i] != b[i]]
+                return len(diff) == 1 or (len(diff) == 2 and diff[1] == diff[0] + 1
+                                          and a[diff[0]] == b[diff[1]] and a[diff[1]] == b[diff[0]])
+            short, long_ = (a, b) if len(a) < len(b) else (b, a)
+            return any(long_[:i] + long_[i + 1:] == short for i in range(len(long_)))
+
+        def fix(match):
+            word = match.group(0)
+            low = word.lower().replace("ё", "е")
+            if len(low) < 4 or low in QWORD_FIXES or low in self._vocabulary():
+                return word
+            hits = [w for w in QWORD_FIXES if one_off(low, w)]
+            return hits[0] if len(hits) == 1 else word
+
+        return re.sub(r"[А-Яа-яЁё]+", fix, text)
+
     def _understand(self, question, turn_index):
         """Favourites, bank, then generic handlers. Returns (text, route, topic) or Nones."""
+        question = self._fix_question_words(question)
         original, question = question, to_ty(question)
         follow = self._followup_reply(original)
         if follow:
@@ -331,6 +500,8 @@ class MiraRuntime:
                 return fav, "favorite", {"футболист": "football", "команда": "football", "спорт": "football",
                                          "аниме": "anime", "персонаж": "anime"}.get(fav_key, "favorite")
         candidate, item = self._bank_reply(original, turn_index)
+        if not candidate and self._polarity == "either":
+            candidate, item = self._bank_reply("Ты человек?", turn_index)
         if (candidate and item.get("topic") in {"movies", "books", "games", "phone", "walk", "music", "sport"}
                 and item.get("priority", 0) < 0 and "?" not in question
                 and re.search(r"\b(?:я|мне|меня|мой|моя|мое|мои|у\s+меня)\b", question)):
@@ -359,6 +530,8 @@ class MiraRuntime:
             self._pending_pin = self._pin_key("frame", fkey) if fkey is not None else None
             return framed, "frame", "frame"
         for name in ("either", "yes_no"):
+            if self._polarity and name == "either":
+                continue
             found = getattr(self.generic, name)(question, self.seed)
             if found and norm(fill_gender(found, self.facts.gender)) not in self.used:
                 return found, name, self.topics[-1] if self.topics else name
@@ -411,6 +584,10 @@ class MiraRuntime:
                 return "До него ничего не было, это был первый"
             self._quoted_back = back - 1
             return f"До этого: «{user_turns[back - 1]}»"
+        if not getattr(self, "_round_declared", False):
+            slot = self.round.answer(question, q, user_turns, bot_turns)
+            if slot:
+                return slot
         if FIRST_Q.search(q) and user_turns:
             return f"Первым был вопрос: «{user_turns[0]}»"
         if LAST_A.search(q) and bot_turns:
@@ -473,11 +650,13 @@ class MiraRuntime:
             need, agrees = 0.85, False   # "X или Y?" is a choice, not a question about X alone
         if score < need and not (agrees and score >= 0.4):
             return None
-        key = self._pin_key("bank", item.get("pin") or item["id"], item.get("topic"))
+        if not lexical_fit(text, item):
+            return None      # similar letters, different subject
+        key = self._key_for(item, text)
         again = self._pinned_repeat(key)
         if again:
             return again, "repeat_topic:" + item["id"], item.get("topic")
-        answers = [a for a in item["answers"] if not foreign_answer(a, text)]
+        answers = self._answers_for(item, text)
         if not answers:
             return None
         choice = self._pick(answers, item["id"] + text, allow_question=True)   # the team's own wording
@@ -522,11 +701,13 @@ class MiraRuntime:
             return None
         if item.get("after") and not set(item["after"]) & set(self._recent_topics()):
             return None   # a follow-up topic ("По какому предмету?") only right after its own question
-        key = self._pin_key("bank", item.get("pin") or item["id"], item.get("topic"))
+        if prob < 0.9 and not lexical_fit(text, item):
+            return None   # a confident model, but the topic shares no words with the question
+        key = self._key_for(item, text)
         again = self._pinned_repeat(key)
         if again:
             return again, "repeat_topic:" + item["id"], item.get("topic")
-        choices = [a for a in item["answers"] if not foreign_answer(a, text)]
+        choices = self._answers_for(item, text)
         if not choices:
             return None   # e.g. "I'm tired" for a question that never asked for English
         choice = self._pick(choices, item["id"] + text, allow_question=bool(item.get("ask")))
@@ -580,7 +761,9 @@ class MiraRuntime:
         text = self._pick(options, kind + x)
         if not text:
             return None
-        return text.replace("{X}", x[:1].upper() + x[1:]).replace("{x}", x), kind
+        lead = 1 if x[:1] in "«„\"" else 0
+        big = x[:lead] + x[lead:lead + 1].upper() + x[lead + 1:]
+        return text.replace("{X}", big).replace("{x}", x), kind
 
     def _kind(self, question):
         q = to_ty(FILLERS.sub("", question) or question)
@@ -596,7 +779,8 @@ class MiraRuntime:
             if word:
                 return mapping.get(word.group(1), "q_which" if word.group(1).startswith("как") else "question_open")
             return "question_open"
-        if re.match(r"^\W*(?:дай|расскажи|скажи|напиши|покажи|объясни|пришли|скинь|спой|опиши)\b", q):
+        if re.match(r"^\W*(?:дай|расскажи|скажи|напиши|покажи|объясни|пришли|скинь|спой|опиши|продолжи|переведи|назови|"
+                    r"перечисли|придумай|приведи|подбери|сформулируй|составь|посчитай)\b", q):
             return "request"
         if re.search(r"\bу\s+меня\s+тоже\b|\bя\s+тоже\b", q) and NEGATIVE.search(q + " жуть"):
             return "statement_same"
@@ -709,6 +893,10 @@ class MiraRuntime:
         self._last_model = None
         self._prediction = None
         hall = self.mode == "hall"
+        self._asked, self._polarity = question, human_question(question)
+        slots_before = (list(self.round.items), list(self.round.numbers), self.round.code)
+        self.round.observe(question, to_ty(question))
+        self._round_declared = slots_before != (list(self.round.items), list(self.round.numbers), self.round.code)
 
         tool = execute_local_tool(question) if len(question) < 400 else None
         if tool and tool.get("ok") and tool.get("text") is not None:
@@ -807,7 +995,7 @@ class MiraRuntime:
                 text, kind = topical
                 route, topic = "fallback:" + kind, "fallback"
         if text is None:
-            kind = self._kind(question)
+            kind = self._kind(self._fix_question_words(question))
             text = self._pick(self.fallbacks.get(kind, []), kind) or self._pick(
                 sum((v for v in self.fallbacks.values()), []), "any") or "Хм)"
             route, topic = "fallback:" + kind, "fallback"
@@ -830,6 +1018,14 @@ class MiraRuntime:
         elif route not in ("tool", "counting", "user_memory"):
             text = self._soften_questions(text)
         text = bounded_text(clean(text), self.max_characters)
+        own_kazakh = [w for w in re.findall(r"\w+", text) if KAZAKH.search(w) and w.lower() not in question.lower()]
+        if latin_dominant(text) or (hall and own_kazakh and not ASKS_FOREIGN.search(question)):
+            kind = self._kind(question)
+            safe = [o for o in self.fallbacks.get(kind, []) + self.fallbacks.get("statement_neutral", [])
+                    if not latin_dominant(o) and not KAZAKH.search(o)]
+            text = bounded_text(clean(hall_style(self._pick(safe, "lang" + kind) or "Хм") if hall else
+                                      (self._pick(safe, "lang" + kind) or "Хм")), self.max_characters)
+            route += "+lang_guard"
         if not text.strip(" .,!?)("):
             text = self._pick(self.fallbacks.get("statement_neutral", []), "empty") or "Ага"   # never send an empty message
         if text.endswith(".") and not text.endswith(".."):

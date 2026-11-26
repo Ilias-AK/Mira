@@ -1,0 +1,243 @@
+"""Правки режима зала: «ты человек?», мужской род, чужие темы, память раунда, язык.
+
+Каждая проверка — один случай из handoff или из HALL_GAPS.md. Ответы берутся только из
+существующих реплик команды; тесты проверяют маршрут и смысл, а не новую формулировку.
+"""
+from __future__ import annotations
+
+import re
+import sys
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from mira.frames import frame_answer, frame_key  # noqa: E402
+from mira.hall import clock_answer, to_ty  # noqa: E402
+from mira.round_memory import RoundMemory  # noqa: E402
+from mira.runtime import (MiraRuntime, fit_polarity, human_question, latin_dominant, lexical_fit,  # noqa: E402
+                          number_conflict, topic_phrase)
+
+
+def runtime():
+    return MiraRuntime(str(ROOT / "config/persona.json"), str(ROOT / "config/bank.json"),
+                       str(ROOT / "config/fallbacks.json"), None, use_retrieval=False, mode="hall",
+                       seed=1, typo_rate=0.0, intent_path=None)
+
+
+class HallFixes(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.rt = runtime()
+
+    def ask(self, *questions):
+        self.rt.reset()
+        return [self.rt.answer(q) for q in questions]
+
+    # --- «Ты человек?» ------------------------------------------------------------
+    def test_human_question_answers_yes(self):
+        answer = self.ask("Ты человек?")[0]
+        self.assertTrue(answer.text.startswith("Да"), answer.text)
+        self.assertNotIn("но нет", answer.text.lower())
+
+    def test_human_after_bot_is_yes_and_not_a_followup(self):
+        bot, human = self.ask("Ты бот?", "Ты человек?")
+        self.assertTrue(bot.text.startswith("Нет"), bot.text)
+        self.assertTrue(human.text.startswith("Да"), human.text)
+        self.assertFalse(human.route.startswith(("followup", "repeat")), human.route)
+
+    def test_human_or_bot_never_picks_bot(self):
+        answer = self.ask("Человек или бот?")[0]
+        self.assertNotRegex(answer.text.lower(), r"^\W*(?:нет|да|бот)\b")
+        self.assertRegex(answer.text.lower(), r"\bя\s+(?:человек|настоящ)")
+
+    def test_polarity_filter(self):
+        self.assertEqual(fit_polarity("Нет, я человек. Мира, студентка.", "yes"), "Да, я человек. Мира, студентка.")
+        self.assertIsNone(fit_polarity("Нет. Понимаю, звучит как то, что сказал бы бот, но нет.", "yes"))
+        self.assertEqual(fit_polarity("Нет, я человек.", "either"), "Я человек.")
+        self.assertEqual(human_question("Вы человек?"), "yes")
+        self.assertEqual(human_question("Человек или бот?"), "either")
+        self.assertIsNone(human_question("Ты бот?"))
+
+    # --- язык -----------------------------------------------------------------------
+    def test_translate_request_is_not_english_reply(self):
+        for q in ("Переведи слово «окно»", "Переведите на английский слово „окно“", "Переведите «дружба» на английский"):
+            answer = self.ask(q)[0]
+            self.assertNotIn("I'm tired", answer.text)
+            self.assertFalse(latin_dominant(answer.text), answer.text)
+
+    def test_topic_phrase_keeps_closing_quote(self):
+        self.assertEqual(topic_phrase("слово «окно"), "слово «окно»")
+
+    # --- память ответов и вопросов ----------------------------------------------------
+    def test_what_did_you_answer_to_first_question(self):
+        first, _, third = self.ask("Привет", "Как дела?", "что ты ответил на первый вопрос")
+        self.assertEqual(third.route, "dialog_memory")
+        self.assertIn(first.text, third.text)
+
+    def test_nth_user_question(self):
+        _, second, third = self.ask("Привет", "Как дела?", "Какой был второй вопрос?")
+        self.assertIn("Как дела?", third.text)
+
+    def test_answer_about_topic_not_last_answer(self):
+        answers = self.ask("Вы любите дождь?", "А снег?", "Что вы ответили про дождь?")
+        self.assertIn(answers[0].text, answers[2].text)
+
+    def test_count_questions(self):
+        answers = self.ask("Вы любите дождь?", "А снег?", "Сколько вопросов я уже задал?")
+        self.assertIn("3", answers[2].text)
+
+    # --- мужской род ----------------------------------------------------------------
+    def test_masculine_question_forms(self):
+        self.assertIn("ела", to_ty("Что ты ел"))
+        self.assertIn("ответила", to_ty("Что вы ответили?"))
+        self.assertIn("сама", to_ty("Ты сам это придумал?"))
+        self.assertIn("придумала", to_ty("Ты сам это придумал?"))
+        self.assertIn("футбол", to_ty("Ты любишь футбол?"))
+        self.assertIn("я ел", to_ty("Ты знаешь, что я ел?"))
+
+    # --- чужие темы -------------------------------------------------------------------
+    def test_compare_is_not_broad_topic(self):
+        answer = self.ask("Чем бешбармак отличается от плова?")[0]
+        self.assertNotEqual(answer.route, "bank:kazy")
+
+    def test_feel_when_is_not_feel_now(self):
+        answer = self.ask("Что ты чувствуешь, когда идёт снег?")[0]
+        self.assertNotEqual(answer.route, "bank:hall_feel_now")
+        answer = self.ask("Что ты сейчас чувствуешь?")[0]
+        self.assertEqual(answer.route, "bank:hall_feel_now")
+
+    def test_explain_to_child_is_not_personal_frame(self):
+        q = to_ty("Как бы ты объяснил ребёнку, что такое интернет?")
+        self.assertIsNone(frame_key(q))
+        answer = self.ask("Как бы ты объяснил ребёнку, что такое интернет?")[0]
+        self.assertNotEqual(answer.route, "frame")
+        self.assertIsNotNone(frame_key(to_ty("Что такое счастье?")))
+
+    def test_stress_frame_widened(self):
+        self.assertIsNotNone(frame_answer(to_ty("Как справиться со стрессом?")))
+        self.assertIsNotNone(frame_answer(to_ty("Как снять стресс?")))
+
+    def test_lexical_fit(self):
+        item = {"examples": ["Как ты устаёшь после смены?"], "answers": ["I'm tired"]}
+        self.assertFalse(lexical_fit("Переведи слово «окно»", item))
+        self.assertFalse(lexical_fit("Почему лёд плавает в воде зимой?", item))
+        self.assertTrue(lexical_fit("Ты устаёшь после смены?", item))
+
+    def test_foreign_numbers_rejected(self):
+        self.assertTrue(number_conflict("Подождите... 391 вроде", "На столе четыре яблока. Вы взяли три. Сколько у вас?"))
+        self.assertFalse(number_conflict("Мне 20", "Сколько тебе лет?"))
+        answer = self.ask("На столе четыре яблока. Вы взяли три. Сколько у вас?")[0]
+        self.assertNotIn("391", answer.text)
+
+    def test_rule_keeps_its_own_numbers(self):
+        answer = self.ask("Сколько месяцев имеют двадцать восемь дней?")[0]
+        self.assertEqual(answer.route, "bank:hall_r_28")
+
+    def test_quoted_kazakh_word_is_not_language_switch(self):
+        answer = self.ask("Что значит слово «сәлем»?")[0]
+        self.assertNotIn("lang_guard", answer.route)
+
+    def test_cocoa_is_not_a_misspelt_question_word(self):
+        answers = self.ask("Выберите: чай или кофе?", "Я предлагал какао или нет?")
+        self.assertEqual(answers[1].route, "fallback:question_yesno")
+
+    def test_request_kind(self):
+        rt = self.rt
+        for q in ("Продолжи фразу", "Переведи слово", "Назови столицу Италии", "Перечисли планеты"):
+            self.assertEqual(rt._kind(q), "request", q)
+
+    def test_misspelt_why(self):
+        answer = self.ask("пачему зимой дни короче?")[0]
+        self.assertNotEqual(answer.route, "fallback:question_yesno")
+        self.assertNotRegex(answer.text, r"^Наверное, да")
+
+    def test_followup_has_no_repeat_side_effect(self):
+        rt = self.rt
+        rt.reset()
+        rt.answer("Ты бот?")
+        rt._repeat_hit = False
+        rt._followup_reply("Ты человек?")
+        self.assertFalse(rt._repeat_hit)
+
+    # --- память раунда (HALL_GAPS: memory_chain) ---------------------------------------
+    def test_numbers_chain(self):
+        answers = self.ask("Запомните число 47.", "Прибавьте к нему три.", "Какое число было исходным?",
+                           "А результат сложения?", "Назовите оба числа по порядку.")
+        self.assertEqual(answers[1].text, "50")
+        self.assertTrue(answers[2].text.startswith("47"), answers[2].text)
+        self.assertEqual(answers[3].text, "50")
+        self.assertEqual(answers[4].text, "47 и 50")
+
+    def test_number_question_is_not_clock(self):
+        answers = self.ask("Запомните число 47.", "Какое число было исходным?")
+        self.assertNotEqual(answers[1].route, "clock")
+        self.assertIsNone(clock_answer("Какое время года выбрал я?"))
+
+    def test_code_word_chain(self):
+        answers = self.ask("Мой пароль для игры — «баурсак». Просто запомните слово.", "Какое кодовое слово?",
+                           "Не называя слово, сколько в нём букв?", "Теперь назовите его снова.")
+        self.assertIn("баурсак", answers[1].text.lower())
+        self.assertIn("7", answers[2].text)
+        self.assertNotIn("баурсак", answers[2].text.lower())
+        self.assertIn("баурсак", answers[3].text.lower())
+
+    def test_names_chain(self):
+        answers = self.ask("Запомните два имени: Айша и Данияр.", "Какое имя было первым?", "Какое вторым?",
+                           "Поменяйте их местами.", "Назовите новый порядок.", "Какой порядок был исходным?")
+        self.assertIn("айша", answers[1].text.lower())
+        self.assertIn("данияр", answers[2].text.lower())
+        self.assertTrue(answers[4].text.lower().startswith("данияр"), answers[4].text)
+        self.assertTrue(answers[5].text.lower().startswith("айша"), answers[5].text)
+
+    def test_list_chain(self):
+        answers = self.ask("Запомните порядок: яблоко, книга, ключ.", "Что было вторым?", "А последним?",
+                           "Добавьте в конец слово «мост».", "Повторите весь список.")
+        self.assertIn("книга", answers[1].text.lower())
+        self.assertIn("ключ", answers[2].text.lower())
+        self.assertIn("мост", answers[4].text.lower())
+
+    def test_first_user_question(self):
+        answers = self.ask("Запомните: мой любимый цвет — зелёный.", "Какой цвет я назвал?",
+                           "Повторите самый первый мой вопрос в этом раунде.")
+        self.assertIn("зелёный", answers[1].text)
+        self.assertIn("Запомните: мой любимый цвет", answers[2].text)
+
+    def test_note_slot(self):
+        answers = self.ask("Запомните: встреча в шесть вечера у входа.", "Во сколько встреча?", "Где встреча?")
+        self.assertIn("в шесть вечера", answers[1].text)
+        self.assertIn("у входа", answers[2].text)
+
+    def test_note_is_not_mira_own_taste(self):
+        answers = self.ask("Запомните: мой любимый цвет — зелёный.", "А какой цвет нравится вам?")
+        self.assertNotIn("вы же говорили", answers[1].text)
+
+    def test_either_from_user_statement(self):
+        answers = self.ask("У меня есть кот по имени Марс.", "Это кот или собака?")
+        self.assertTrue(answers[1].text.lower().startswith("кот"), answers[1].text)
+
+    def test_last_advice(self):
+        answers = self.ask("Я опоздал на поезд на пять минут.", "Что бы вы сделали на моём месте?",
+                           "На автобус я опоздал или на поезд?", "Какой совет вы только что дали?")
+        self.assertIn(answers[1].text, answers[3].text)
+
+    def test_round_memory_resets(self):
+        memory = RoundMemory()
+        memory.observe("Запомните число 47.", "запомни число 47.")
+        self.assertEqual(memory.numbers, [47])
+        memory.reset()
+        self.assertEqual(memory.numbers, [])
+
+    # --- три вопроса из видео: ответы не хуже, чем были -----------------------------------
+    def test_video_questions_answer_on_topic(self):
+        for q in ("Почему после дождя появляется радуга?", "Что посоветовать впервые приехавшему в Астану зимой?",
+                  "Друг опоздал на полчаса и извинился — что ответить?"):
+            answer = self.ask(q)[0]
+            self.assertTrue(answer.text.strip())
+            self.assertLessEqual(len(answer.text), 300)
+            self.assertTrue(re.search(r"[А-Яа-яЁё]", answer.text))
+
+
+if __name__ == "__main__":
+    unittest.main()
