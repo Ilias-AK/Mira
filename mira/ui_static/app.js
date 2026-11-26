@@ -17,8 +17,11 @@
     // Все кнопки из макета включены. Поиск и «Подумать глубже» уходят на сервер в options,
     // вложения вставляют текст файла в сообщение, голос работает через Web Speech API браузера.
     features: { attach: true, search: true, think: true, voice: true },
-    typewriter: true,          // постепенный вывод ответа (пока API не стримит)
-    minThinkingMs: 450,        // чтобы индикатор «думает» не мигал
+    typewriter: false,         // ответ показывается целиком, одним сообщением
+    replyBaseMs: 4200,         // естественная пауза перед ответом: 4,2–5,0 с,
+    replyPerCharMs: 3,         //   чуть дольше для длинного ответа (не больше +0,4 с)
+    replyLengthCapMs: 400,
+    replyJitterMs: 400,        //   и разная для разных вопросов, но одинаковая для одного и того же
     historyLimit: 50,
     counterFrom: 420,          // с какого числа символов показывать счётчик
     maxFileBytes: 512 * 1024,  // вложения: только текстовые файлы до 512 КБ
@@ -212,6 +215,30 @@
   function safeFileName(title) {
     const name = String(title || "").replace(/[\\/:*?"<>|\u0000-\u001f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 60);
     return name || "Mira";
+  }
+
+  /* Детерминированный разброс 0…max мс по тексту вопроса (FNV-1a): один и тот же вопрос —
+     одна и та же пауза, разные вопросы — разные. */
+  function deterministicJitter(text, max) {
+    const key = String(text || "").toLowerCase().replace(/ё/g, "е").replace(/\s+/g, " ").trim();
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < key.length; i += 1) {
+      hash ^= key.charCodeAt(i);
+      hash = Math.imul(hash, 0x01000193) >>> 0;
+    }
+    return hash % (max + 1);
+  }
+
+  function replyDelayMs(question, answer) {
+    return CONFIG.replyBaseMs
+      + Math.min(String(answer || "").length * CONFIG.replyPerCharMs, CONFIG.replyLengthCapMs)
+      + deterministicJitter(question, CONFIG.replyJitterMs);
+  }
+
+  function formatReplyTime(ms) {
+    const n = Number(ms);
+    if (!Number.isFinite(n) || n <= 0) return "";
+    return `Ответ за ${(n / 1000).toFixed(1).replace(".", ",")} с`;
   }
 
   function formatSeconds(value) {
@@ -623,9 +650,11 @@
     const value = els.input.value;
     const hasText = value.trim().length > 0;
     const working = state.busy || Boolean(state.typing);
-    els.composer.dataset.state = working ? "busy" : hasText ? "ready" : "idle";
-    els.send.disabled = !working && (!hasText || !state.connected);
-    els.send.setAttribute("aria-label", working ? "Остановить ответ" : "Отправить");
+    els.composer.dataset.state = working ? "waiting" : hasText ? "ready" : "idle";
+    // Пока Мира «печатает», кнопка неактивна: повторное нажатие не отправит вопрос второй раз
+    // и не оборвёт ответ (остановить можно клавишей Esc)
+    els.send.disabled = working || !hasText || !state.connected;
+    els.send.setAttribute("aria-label", working ? "Мира отвечает" : "Отправить");
 
     const len = value.length;
     els.charCount.textContent = len >= CONFIG.counterFrom ? `${len}/${state.maxChars}` : "";
@@ -752,7 +781,8 @@
     speakBtn.setAttribute("aria-pressed", "false");
     actions.appendChild(speakBtn);
 
-    const meta = el("span", "msg-meta", [CONFIG.model, formatSeconds(msg.seconds)].filter(Boolean).join(" · "));
+    // Время — только реально измеренное в браузере (от нажатия «Отправить» до появления ответа)
+    const meta = el("span", "msg-meta", [CONFIG.model, formatReplyTime(msg.replyMs)].filter(Boolean).join(" · "));
     actions.appendChild(meta);
     body.appendChild(actions);
     row.append(avatar, body);
@@ -804,9 +834,13 @@
     row.id = "thinkingRow";
     const avatar = el("div", "msg-avatar");
     avatar.innerHTML = MARK;
-    const label = el("span", "thinking-label", "Mira думает…");
+    const label = el("span", "thinking-label", "Мира печатает");
     label.setAttribute("role", "status");
-    row.append(avatar, label);
+    label.setAttribute("aria-label", "Мира печатает");
+    const dots = el("span", "typing-dots");
+    dots.setAttribute("aria-hidden", "true");
+    for (let i = 0; i < 3; i += 1) dots.appendChild(el("span", "typing-dot"));
+    row.append(avatar, label, dots);
     els.messages.appendChild(row);
     stickToBottom();
   }
@@ -855,7 +889,8 @@
   /* ---------- Отправка ---------- */
   function setBusy(busy) {
     state.busy = busy;
-    els.input.readOnly = false;
+    els.input.readOnly = busy;   // пока Мира отвечает, второй вопрос не отправить
+    els.input.setAttribute("aria-busy", String(busy));
     updateComposer();
   }
 
@@ -899,13 +934,18 @@
 
     try {
       const answer = await api.message(message, controller.signal, options);
-      const wait = Math.max(0, CONFIG.minThinkingMs - (performance.now() - started));
-      if (wait) await sleep(wait, controller.signal);
+      const text = String(answer.text ?? "");
+      // Поиск ответа уже занял lookupElapsedMs — ждём только остаток до целевой паузы (асинхронно)
+      const lookupElapsedMs = performance.now() - started;
+      const remainingMs = Math.max(0, replyDelayMs(message, text) - lookupElapsedMs);
+      if (remainingMs) await sleep(remainingMs, controller.signal);
       hideThinking();
+      const replyMs = performance.now() - started;
       const msg = {
         role: "assistant",
-        text: String(answer.text ?? ""),
-        seconds: Number(answer.seconds) || (performance.now() - started) / 1000,
+        text,
+        seconds: replyMs / 1000,
+        replyMs,
         route: answer.route ? String(answer.route) : undefined,
         think: options.think || undefined,
         memory: answer.memoryUpdated === true || undefined,
@@ -1535,8 +1575,8 @@
   /* ---------- События ---------- */
   els.composer.addEventListener("submit", (event) => {
     event.preventDefault();
-    if (state.busy || state.typing) stop();
-    else sendMessage(els.input.value);
+    if (state.busy || state.typing) return;   // второй клик во время ответа ничего не делает
+    sendMessage(els.input.value);
   });
 
   els.input.addEventListener("input", updateComposer);

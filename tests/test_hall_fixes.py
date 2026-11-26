@@ -229,6 +229,20 @@ class HallFixes(unittest.TestCase):
         memory.reset()
         self.assertEqual(memory.numbers, [])
 
+    # --- обязательный вопрос про радугу: всегда один и тот же ответ, дословно ----------------
+    def test_rainbow_exact_answer(self):
+        expected = ("Солнце светит через капли, и свет в них разделяется на разные цвета. "
+                    "Поэтому и появляется радуга. Я это примерно так помню со школы.")
+        q = "Почему после дождя иногда появляется радуга? Объясни простыми словами."
+        for mode in ("hall", "chat"):
+            rt = MiraRuntime(str(ROOT / "config/persona.json"), str(ROOT / "config/bank.json"),
+                             str(ROOT / "config/fallbacks.json"), None, use_retrieval=False, mode=mode,
+                             seed=3, typo_rate=1.0, intent_path=None)
+            first, again = rt.answer(q), rt.answer(q)
+            self.assertEqual(first.text, expected)
+            self.assertEqual(again.text, expected)    # без «Я же уже говорила» и без опечатки
+            self.assertEqual(first.route, "exact:hall_why_rainbow")
+
     # --- три вопроса из видео: ответы не хуже, чем были -----------------------------------
     def test_video_questions_answer_on_topic(self):
         for q in ("Почему после дождя появляется радуга?", "Что посоветовать впервые приехавшему в Астану зимой?",

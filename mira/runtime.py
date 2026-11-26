@@ -505,6 +505,15 @@ class MiraRuntime:
                 return choice, item
         return None, None
 
+    def _exact(self, question):
+        """A bank topic with "exact" regexes answers those questions always with its first answer, verbatim."""
+        q = norm(question)
+        for item in self.bank.intents:
+            for pattern in item.get("exact", []):
+                if re.search(pattern, q):
+                    return item
+        return None
+
     def _fix_question_words(self, text):
         """«пачему зимой…» -> «почему зимой…»: only misspelt question words (one letter off), nothing else."""
         def one_off(a, b):
@@ -957,6 +966,7 @@ class MiraRuntime:
         self._last_model = None
         self._prediction = None
         hall = self.mode == "hall"
+        exact_hit = self._exact(question)
         self._asked, self._polarity = question, human_question(question)
         slots_before = (list(self.round.items), list(self.round.numbers), self.round.code)
         self.round.observe(question, to_ty(question))
@@ -1103,6 +1113,9 @@ class MiraRuntime:
                 said = frozenset(re.findall(r"[а-яё]+", " ".join([question] + [t["text"] for t in self.history if t["role"] == "user"]).lower()))
                 text = add_typo(text, rnd, said)
 
+        if exact_hit:   # a fixed answer: word for word, no typo, no «я же уже говорила», in any mode
+            text = plain = exact_hit["answers"][0]
+            route, topic, self._pending_pin = "exact:" + exact_hit["id"], exact_hit.get("topic"), None
         self.history += [{"role": "user", "text": question}, {"role": "assistant", "text": text}]
         self.aliases.append(self._aliases_for(question, topic))
         self.topics.append(topic)
