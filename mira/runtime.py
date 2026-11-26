@@ -248,7 +248,7 @@ class MiraRuntime:
                 best, score = item, value
         if best is None or score < 0.7:
             return None
-        key = self._pin_key("bank", best["id"], best.get("topic"))
+        key = self._pin_key("bank", best.get("pin") or best["id"], best.get("topic"))
         if self._pinned_repeat(key):
             return None
         answers = [a for a in best["answers"] if not foreign_answer(a, text)]
@@ -296,7 +296,7 @@ class MiraRuntime:
             if rest:
                 return ("Привет! " + rest if turn_index == 0 else rest), item
         for item in self.bank.match([to_ty(text), text], self._recent_topics(), turn_index, self.mode):
-            key = self._pin_key("bank", item["id"], item.get("topic"))
+            key = self._pin_key("bank", item.get("pin") or item["id"], item.get("topic"))
             again = self._pinned_repeat(key)
             if again:
                 return again, item
@@ -473,7 +473,7 @@ class MiraRuntime:
             need, agrees = 0.85, False   # "X или Y?" is a choice, not a question about X alone
         if score < need and not (agrees and score >= 0.4):
             return None
-        key = self._pin_key("bank", item["id"], item.get("topic"))
+        key = self._pin_key("bank", item.get("pin") or item["id"], item.get("topic"))
         again = self._pinned_repeat(key)
         if again:
             return again, "repeat_topic:" + item["id"], item.get("topic")
@@ -522,7 +522,7 @@ class MiraRuntime:
             return None
         if item.get("after") and not set(item["after"]) & set(self._recent_topics()):
             return None   # a follow-up topic ("По какому предмету?") only right after its own question
-        key = self._pin_key("bank", item["id"], item.get("topic"))
+        key = self._pin_key("bank", item.get("pin") or item["id"], item.get("topic"))
         again = self._pinned_repeat(key)
         if again:
             return again, "repeat_topic:" + item["id"], item.get("topic")

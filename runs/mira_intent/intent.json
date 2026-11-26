@@ -1,14 +1,28 @@
 {
-  "examples": 1790,
-  "topics": 1028,
-  "train_rows": 7165,
-  "val_rows": 357,
-  "val_accuracy": 0.8291316526610645,
+  "examples": 6450,
+  "topics": 1030,
+  "train_rows": 25955,
+  "val_rows": 681,
+  "val_accuracy": 0.8839941262848752,
   "threshold": 0.4,
   "checkpoint": "runs\\main\\dialogue\\best.pt",
+  "seed": 7,
+  "epochs": 40,
+  "extra_train": [
+    "data\\delivery_v2\\intent\\train.jsonl"
+  ],
+  "external_validation": {
+    "file": "data\\delivery_v2\\intent\\val.jsonl",
+    "n": 383,
+    "covered_labels": 383,
+    "accuracy": 0.8381,
+    "macro_f1": 0.8221,
+    "share_above_threshold": 0.8616,
+    "precision_above_threshold": 0.9364
+  },
   "round_files": [
     "data/team_raw\\rounds_2026-11-23.txt"
   ],
   "paraphrase_files": [],
-  "seconds": 219
+  "seconds": 948
 }

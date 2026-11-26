@@ -44,3 +44,18 @@ python -m mira.chat --config-dir config\candidate_v2_keep --intent runs\mira_int
 ```
 
 Выпуск в рабочую версию — только вручную и только если `runs/eval_v2/comparison_*.md` показывает, что кандидат не хуже по критическим проверкам и лучше по качеству.
+
+## Итог (26.11.2026)
+
+Подтверждающий прогон на ноутбуке (`runs/train_v2/eval-20261126-0144`): кандидат `candidate_v2_keep` + нейросеть тем v2
+лучше baseline по 10 метрикам качества, хуже ни по одной; регрессия 29/29, память 14/14, канон 0, не-русский 0,
+> 300 символов 0, > 45 с 0. Нейросеть тем отдельно: точность 0.695 → 0.838, macro-F1 0.672 → 0.822 (validation архива, synthetic).
+
+Выпуск (ветка `release/v2`): `config/` = `candidate_v2_keep` + метка `_profile`, `runs/mira_intent/intent.pt` = v2.
+После проверки добавлено поле `pin` (hall_study повторяется как team_uni) — проверено без нейросети: самопроверка 12/12,
+регрессия 29/29, память 14/14.
+
+- откат: `mira/rollback_v1.ps1` (копия v1 в `runs/baseline_v1`);
+- `build/make_bank.py` и `mira/team_qa.py` больше не затирают выпущенный профиль (пишут `*.built.json`, перезапись — `--force`);
+- `mira/train_intent.ps1` учит по рецепту v2 в `runs/mira_intent_next` и только сравнивает;
+- генератор v2 (`runs/generator_v2` на ноутбуке) к ответам Миры не подключён.

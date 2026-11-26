@@ -442,7 +442,8 @@
    ],
    "priority": 1,
    "source": "team",
-   "mode": "hall"
+   "mode": "hall",
+   "pin": "team_uni"
   },
   {
    "id": "hall_live",

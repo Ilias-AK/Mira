@@ -91,6 +91,9 @@ def main():
             stream.reconfigure(encoding="utf-8", errors="replace")
     pattern = sys.argv[1] if len(sys.argv) > 1 else "data/team_raw/hall_qa_*.txt"
     out = Path(sys.argv[2]) if len(sys.argv) > 2 else HERE / "config" / "team_qa.json"
+    if len(sys.argv) <= 2 and out.exists() and "_profile" in json.loads(out.read_text(encoding="utf-8")) and "--force" not in sys.argv:
+        out = out.with_name("team_qa.built.json")   # рабочий team_qa.json выпущен из пакета v2: не затираем его молча
+        print("config/team_qa.json — выпущенный профиль v2, сборка записана в config/team_qa.built.json")
     paths = sorted(p for p in glob.glob(pattern) if not p.endswith("template.txt"))
     intents = to_intents(paths)
     out.write_text(json.dumps({"_note": "Темы из файлов команды hall_qa_*.txt (создаётся автоматически, правьте исходные файлы).",
