@@ -50,7 +50,8 @@ class Bank:
         data = json.loads(Path(path).read_text(encoding="utf-8-sig"))
         items = list(data.get("intents", []))
         if extra_paths is None:
-            extra_paths = [Path(path).with_name("team_qa.json")]
+            # team topics, then generated ones (config/team_qa_gen.json; delete the file to drop them)
+            extra_paths = [Path(path).with_name("team_qa.json"), Path(path).with_name("team_qa_gen.json")]
         for extra in extra_paths:
             if Path(extra).is_file():
                 items += json.loads(Path(extra).read_text(encoding="utf-8-sig")).get("intents", [])
@@ -67,19 +68,44 @@ class Bank:
                 "_examples": [grams(x) for x in item.get("examples", [])],
             })
         self.by_id = {item["id"]: item for item in self.intents}
+        # inverted trigram index over all example questions: similarity to thousands of topics in milliseconds
+        self._postings, self._ex_item, self._ex_norm = {}, [], []
+        for index, item in enumerate(self.intents):
+            for g in item["_examples"]:
+                ex = len(self._ex_item)
+                self._ex_item.append(index)
+                self._ex_norm.append(math.sqrt(sum(v * v for v in g.values())) or 1.0)
+                for gram, count in g.items():
+                    self._postings.setdefault(gram, []).append((ex, count))
+
+    def example_scores(self, q: Counter):
+        """{intent index: best cosine of the question against that intent's examples}."""
+        if not q:
+            return {}
+        dots = {}
+        for gram, qc in q.items():
+            for ex, count in self._postings.get(gram, ()):
+                dots[ex] = dots.get(ex, 0) + qc * count
+        qn = math.sqrt(sum(v * v for v in q.values()))
+        best = {}
+        for ex, dot in dots.items():
+            value = dot / (qn * self._ex_norm[ex])
+            index = self._ex_item[ex]
+            if value > best.get(index, 0.0):
+                best[index] = value
+        return best
 
     def nearest(self, question: str, recent_topics=(), mode: str = "hall"):
         """Topic whose team-written example question is most similar: (item, similarity) or (None, 0)."""
-        q = grams(question)
         best, score = None, 0.0
-        for item in self.intents:
-            if not item["_examples"] or (item.get("mode") and item["mode"] != mode):
+        recent = set(recent_topics)
+        for index, value in self.example_scores(grams(question)).items():
+            item = self.intents[index]
+            if value <= score or (item.get("mode") and item["mode"] != mode):
                 continue
-            if item.get("after") and not set(item["after"]) & set(recent_topics):
+            if item.get("after") and not set(item["after"]) & recent:
                 continue
-            value = max(cosine(q, e) for e in item["_examples"])
-            if value > score:
-                best, score = item, value
+            best, score = item, value
         return best, score
 
     def match(self, question, recent_topics=(), turn_index: int = 0, mode: str = "hall"):

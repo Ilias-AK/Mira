@@ -68,7 +68,7 @@ def check_answer(text, where, report):
         report("ERROR", where, "смайлик или «ахах»: в зале их нет")
     if KAZAKH.search(text):
         report("ERROR", where, "казахские буквы в ответе: фильтр языка их заблокирует")
-    if latin_share(text) > 0.3:
+    if latin_share(text.replace("{x}", "").replace("{X}", "")) > 0.3:
         report("ERROR", where, "много латиницы: ответы только на русском")
     if BOTTY.search(text):
         report("ERROR", where, f"звучит как бот: «{BOTTY.search(text).group(0)}»")

@@ -165,9 +165,10 @@ def foreign_answer(answer, question):
 
 
 def latin_dominant(text):
-    """The contest wants Russian answers: mostly Latin letters is never shown, even for a translation request."""
+    """The contest wants Russian answers: an answer under 70% Cyrillic letters is never shown,
+    even for a translation request («Это sea», «console.log "hi"?»). Same bar as the evaluation."""
     letters = re.findall(r"[A-Za-zА-Яа-яЁё]", text)
-    return bool(letters) and sum(1 for c in letters if c.isascii()) / len(letters) > 0.5
+    return bool(letters) and sum(1 for c in letters if re.match(r"[А-Яа-яЁё]", c)) / len(letters) < 0.7
 
 
 HUMAN_Q = re.compile(r"^\W*(?:а\s+|ну\s+|так\s+)?(?:ты|вы)\s+(?:(?:точно|правда|вообще|действительно|всё-таки|все-таки|живой|живая|настоящий|настоящая|реальный|реальная)\s+)*человек\s*\??\W*$")
@@ -236,11 +237,28 @@ def _stem(word):
     return word[:5] if len(word) > 5 else word
 
 
-def lexical_fit(question, item):
+_DF = {"bank": None, "df": {}}
+
+
+def _doc_freq(bank):
+    """How many topics use each word stem (examples and answers): rare stems carry the meaning."""
+    if _DF["bank"] is not bank:
+        df = {}
+        for item in bank.intents:
+            text = norm(" ".join(item.get("examples", []) + item.get("answers", [])))
+            for stem in {_stem(w) for w in re.findall(r"[а-яё]+", text) if len(w) >= 3}:
+                df[stem] = df.get(stem, 0) + 1
+        _DF.update(bank=bank, df=df)
+    return _DF["df"]
+
+
+def lexical_fit(question, item, bank=None):
     """A topic found by similarity or by the model must share words with the question.
 
-    A word in quotes («окно») has to occur in the topic; with three or more significant words
-    at least a third of them must."""
+    - a word in quotes («окно») has to occur in the topic;
+    - with three or more significant words at least a third of them must;
+    - for a generated topic, the rarest word and every specific word (used by ≤15 topics) must occur in it: «Что такое фотосинтез простыми
+      словами?» is not «Скажите простыми словами, что такое ток», «три реки» is not «три города»."""
     hay_text = norm(" ".join(item.get("examples", []) + item.get("answers", [])))
     hay = {_stem(w) for w in re.findall(r"[а-яё]+", hay_text)}
     for quoted in re.findall(r"[«\"„]([^»\"“]{2,40})[»\"“]", question):
@@ -250,7 +268,15 @@ def lexical_fit(question, item):
     words = significant(question)
     if len(words) >= 3:
         covered = sum(1 for w in words if _stem(w) in hay)
-        return covered / len(words) >= 0.33   # one word of three is enough
+        if covered / len(words) < 0.33:   # one word of three is enough
+            return False
+    if bank is not None and len(words) >= 2 and item.get("source_kind") == "generated":
+        df = _doc_freq(bank)   # only for generated topics: the team's own ones are tuned already
+        stems = [_stem(w) for w in words]
+        rarest = min((df.get(st, 0), st) for st in stems)[1]   # a word no topic knows («ВВП») counts as rarest
+        specific = [st for st in stems if df.get(st, 0) <= 15]   # «метров», «алфавите»: words few topics use
+        if rarest not in hay or any(st not in hay for st in specific):
+            return False
     return True
 
 
@@ -271,6 +297,9 @@ class MiraRuntime:
             if hall_path.is_file():
                 fallbacks = json.loads(hall_path.read_text(encoding="utf-8-sig"))
         self.fallbacks = {k: v for k, v in fallbacks.items() if not k.startswith("_")}
+        self.topic_answers = {"tell": TELL_ANSWERS, "make": MAKE_ANSWERS, "define": DEFINE_ANSWERS, "fragment": FRAGMENT_ANSWERS}
+        if mode == "hall":
+            self._merge_generated_fallbacks(Path(fallbacks_path).with_name("gen") / "fallbacks_gen.json")
         self.max_characters = min(300, int(self.profile.get("max_characters", max_characters)))
         self.deadline_seconds = float(self.profile.get("deadline_seconds", deadline_seconds))
         self.retrieval_k, self.min_context_similarity = retrieval_k, min_context_similarity
@@ -294,6 +323,29 @@ class MiraRuntime:
         if self.retriever is not None and getattr(self.retriever, "reranker", None):
             self.use_reranker_too = True
         self.reset()
+
+    def _merge_generated_fallbacks(self, path):
+        """Generated hall fallbacks (config/gen/fallbacks_gen.json) are added to the team's ones, filtered:
+        an unknown yes/no question gets only a hedged answer («Скорее да»), never a flat «Да, конечно»."""
+        if not path.is_file():
+            return
+        try:
+            extra = json.loads(path.read_text(encoding="utf-8-sig"))
+        except (OSError, ValueError):
+            return
+        hedged = re.compile(r"(?i)скорее|наверное|иногда|бывает|бывало|не особо|смотря|не всегда|когда как|вряд ли|"
+                            r"пожалуй|думаю|вроде|чаще|не уверена|почти|оговорк|пятьдесят|зависит|сложно сказать")
+        for kind, options in extra.items():
+            if kind.startswith("_") or not isinstance(options, list):
+                continue
+            good = [o for o in options if isinstance(o, str) and o.strip() and len(o) <= 200
+                    and not latin_dominant(o.replace("{x}", "").replace("{X}", "")) and not KAZAKH.search(o)]
+            if kind == "question_yesno":
+                good = [o for o in good if hedged.search(o)]
+            target = self.topic_answers if kind in self.topic_answers else self.fallbacks
+            if kind in self.topic_answers:
+                good = [o for o in good if "{x}" in o or "{X}" in o]
+            target[kind] = list(target.get(kind, [])) + [o for o in good if o not in target.get(kind, [])]
 
     # ------------------------------------------------------------------ state
     def reset(self):
@@ -380,7 +432,7 @@ class MiraRuntime:
         for item in self.bank.intents:
             if item.get("source") != "team_qa" or not item.get("after") or not set(item["after"]) & recent:
                 continue
-            value = max((cosine(q, grams(e)) for e in item.get("examples", [])), default=0.0)
+            value = max((cosine(q, g) for g in item.get("_examples", [])), default=0.0)   # grams built once in Bank
             if value > score:
                 best, score = item, value
         if best is None or score < need:
@@ -402,11 +454,11 @@ class MiraRuntime:
         q = grams(question)
         recent = set(self._recent_topics())
         found = []
-        for item in self.bank.intents:
-            if item.get("source") != "team_qa" or (item.get("after") and not set(item["after"]) & recent):
+        for index, value in self.bank.example_scores(q).items():
+            item = self.bank.intents[index]
+            if value < 0.6 or item.get("source") != "team_qa" or (item.get("after") and not set(item["after"]) & recent):
                 continue
-            value = max((cosine(q, grams(e)) for e in item.get("examples", [])), default=0.0)
-            if value >= 0.6 and item["id"] != topic:
+            if item["id"] != topic:
                 found.append((value, item["id"]))
         return [ident for _, ident in sorted(found, reverse=True)[:4]]   # several teams may have written the same question
 
@@ -599,8 +651,10 @@ class MiraRuntime:
 
     def _vocabulary(self):
         if not hasattr(self, "_vocab"):
-            words = set(re.findall(r"[а-я]{3,}", " ".join(p for item in self.bank.intents for p in item.get("patterns", []))))
-            words |= set(re.findall(r"[а-я]{3,}", norm(" ".join(a for item in self.bank.intents for a in item["answers"]))))
+            # the team's own words only: thousands of generated answers make every typo ambiguous («скока»)
+            team = [item for item in self.bank.intents if item.get("source_kind") != "generated"]
+            words = set(re.findall(r"[а-я]{3,}", " ".join(p for item in team for p in item.get("patterns", []))))
+            words |= set(re.findall(r"[а-я]{3,}", norm(" ".join(a for item in team for a in item["answers"]))))
             words |= {"тебе", "тебя", "сколько", "зовут", "дела", "делаешь", "любишь", "учишься", "работаешь", "живешь",
                       "откуда", "почему", "когда", "какой", "какая", "привет", "спасибо", "хорошо", "нормально"}
             self._vocab = words
@@ -648,9 +702,15 @@ class MiraRuntime:
             need = max(need, 0.9)    # one word ("шарага?") is too little to recognise a topic
         if re.search(r"\bили\b", norm(text)) and not any(re.search(r"\bили\b", norm(x)) for x in item.get("examples", [])):
             need, agrees = 0.85, False   # "X или Y?" is a choice, not a question about X alone
+        if item.get("source_kind") == "generated":
+            few = len(significant(text)) < 3
+            need = max(need, 0.8 if few else 0.7)   # thousands of generated topics: be stricter than with the team's
+            if few and re.search(r"\b(?:тогда|там|туда|оттуда|его|ее|её|их|именно|этого|этом|этой|это|этим|он|она|оно|они|им|ему|ей|них|нему|ней)\b",
+                                 norm(to_ty(text))):
+                return None   # «Сколько вам тогда было лет?» refers to the previous answer, not to a topic
         if score < need and not (agrees and score >= 0.4):
             return None
-        if not lexical_fit(text, item):
+        if not lexical_fit(text, item, self.bank):
             return None      # similar letters, different subject
         key = self._key_for(item, text)
         again = self._pinned_repeat(key)
@@ -701,7 +761,7 @@ class MiraRuntime:
             return None
         if item.get("after") and not set(item["after"]) & set(self._recent_topics()):
             return None   # a follow-up topic ("По какому предмету?") only right after its own question
-        if prob < 0.9 and not lexical_fit(text, item):
+        if prob < 0.9 and not lexical_fit(text, item, self.bank):
             return None   # a confident model, but the topic shares no words with the question
         key = self._key_for(item, text)
         again = self._pinned_repeat(key)
@@ -745,14 +805,14 @@ class MiraRuntime:
         define = DEFINE.match(q)
         request = REQUEST.match(q)
         if define:
-            x, answers, kind = topic_phrase(define.group(1)), DEFINE_ANSWERS, "define"
+            x, answers, kind = topic_phrase(define.group(1)), self.topic_answers["define"], "define"
         elif request:
             x = topic_phrase(request.group(3)) if request.group(3) else None
-            answers, kind = (TELL_ANSWERS if request.group(1) else MAKE_ANSWERS), "request_topic"
+            answers, kind = (self.topic_answers["tell"] if request.group(1) else self.topic_answers["make"]), "request_topic"
         elif ("?" not in q and 2 <= len(q.split()) <= 4 and not VERB_LIKE.search(q)
               and not re.search(r"\d+\s*[-+*/xх×:]\s*\d", q)
               and not all(w in INTERJECTIONS for w in re.findall(r"[а-яё]+", q.lower()))):
-            x, answers, kind = topic_phrase(q), FRAGMENT_ANSWERS, "fragment"
+            x, answers, kind = topic_phrase(q), self.topic_answers["fragment"], "fragment"
         else:
             return None
         if not x:
@@ -763,6 +823,8 @@ class MiraRuntime:
             return None
         lead = 1 if x[:1] in "«„\"" else 0
         big = x[:lead] + x[lead:lead + 1].upper() + x[lead + 1:]
+        if lead:   # the words are already in quotes: «{x}» would give ««окно»»
+            text = re.sub(r"[«„\"](\{[xX]\})[»“\"]", r"\1", text)
         return text.replace("{X}", big).replace("{x}", x), kind
 
     def _kind(self, question):
@@ -773,6 +835,8 @@ class MiraRuntime:
             wh = QUESTION_WORD.search(q) or QUESTION_WORD_START.search(q)
             if not wh:
                 return "question_yesno"
+            if re.search(r"\b(?:почему|зачем|отчего|с\s+чего)\b", q) and self.fallbacks.get("q_why"):
+                return "q_why"
             word = re.search(r"\b(что|как|какой|какая|какое|какие|какую|какого|каком|где|когда|сколько|кто|ч[её]м)\b", q)
             mapping = {"как": "q_how", "что": "q_what", "чем": "q_what", "чём": "q_what", "где": "q_where", "когда": "q_when",
                        "сколько": "q_howmuch", "кто": "q_who"}
