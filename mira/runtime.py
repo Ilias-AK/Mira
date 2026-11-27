@@ -255,7 +255,7 @@ def _doc_freq(bank):
 
 
 LANG_ADJ = re.compile(r"\b(русск|казахск|английск|немецк|французск|китайск|японск|турецк|арабск|испанск|итальянск|корейск|узбекск|"
-                      r"кыргызск|киргизск|российск|казахстанск|американск|европейск)\w*")
+                      r"кыргызск|киргизск|российск|казахстанск|американск|европейск|казахстанц|россиян|американц|китайц|японц)\w*")
 
 
 SHAPE_WORDS = set("""ответишь скажешь напишешь ответила сказала написала ответил сказал написал отреагировала отреагируешь
@@ -282,30 +282,35 @@ def lexical_fit(question, item, bank=None, loose=False):
     - for a generated topic, the rarest word and every specific word (used by ≤15 topics) must occur in it: «Что такое фотосинтез простыми
       словами?» is not «Скажите простыми словами, что такое ток», «три реки» is not «три города»."""
     hay_text = norm(" ".join(item.get("examples", []) + item.get("answers", [])))
-    hay = {_stem(w) for w in re.findall(r"[а-яё]+", hay_text)}
+    hay_words = re.findall(r"[а-яё]+", hay_text)
+    hay = {_stem(w) for w in hay_words} | {w[:4] for w in hay_words if len(w) >= 6}
     for quoted in re.findall(r"[«\"„]([^»\"“]{2,40})[»\"“]", question):
         words = [w for w in re.findall(r"[а-яё]+", norm(quoted)) if len(w) >= 3]
-        if words and not any(_stem(w) in hay for w in words):
+        if words and not any(_stem(w) in hay or (len(w) >= 6 and w[:4] in hay) for w in words):
             return False
     words = significant(question)
     # «в казахском алфавите» — не тема «в русском алфавите»: другой язык или страна в вопросе и в теме
     asked_lang = set(LANG_ADJ.findall(norm(question)))
     if asked_lang:
         topic_lang = set(LANG_ADJ.findall(hay_text))
-        if topic_lang and not asked_lang & topic_lang:
-            return False
+        if (topic_lang or item.get("source_kind") == "generated") and not asked_lang & topic_lang:
+            return False   # «Кто из казахстанцев первым…» — не тема про Гагарина без слова о Казахстане
     if len(words) >= 3:
         covered = sum(1 for w in words if _stem(w) in hay)
         if covered / len(words) < 0.33:   # one word of three is enough
             return False
+    if bank is not None and item.get("source_kind") == "generated":
+        df = _doc_freq(bank)
+        if any(df.get(_stem(w), 0) <= 2 and _stem(w) not in hay for w in words):
+            return False   # слово, которого почти нет в банке («ВВП»), обязано быть в теме даже при близком совпадении
     if bank is not None and not loose and len(words) >= 2 and item.get("source_kind") == "generated":
         df = _doc_freq(bank)   # only for generated topics: the team's own ones are tuned already
-        stems = [_stem(w) for w in words]
-        rarest = min((df.get(st, 0), st) for st in stems)[1]   # a word no topic knows («ВВП») counts as rarest
         wdf = _DF["wdf"]
-        # «метров», «алфавите», «казахском», «казахстанцев»: слова, которые знают немногие темы
+        # «метров», «алфавите», «нарисовал»: слова, которые знают немногие темы; в длинном вопросе одно может не совпасть
         specific = [_stem(w) for w in words if df.get(_stem(w), 0) <= 15 or wdf.get(w, 0) <= 6]
-        if rarest not in hay or any(st not in hay for st in specific):
+        missing = sum(1 for st in specific if st not in hay)
+        covered_all = sum(1 for w in words if _stem(w) in hay) / len(words)
+        if missing > (1 if len(words) >= 3 and covered_all >= 0.75 else 0):
             return False
     return True
 
@@ -331,7 +336,8 @@ REPLY_LIKE = re.compile(r"(?i)^\W*(?:сказала|ответила|напис�
                         r"поблагодарю|скажу|отвечу|напишу|я\s+бы|наверное,?\s+(?:сказала|ответила|написала)|ничего\s+страшного|спасибо|"
                         r"да\s+ладно|бывает|ой\b|ну\s+бывает|всё\s+нормально|все\s+нормально)|\b(?:сказала|ответила|написала|попросила)\s+бы\b")
 ADVICE_LIKE = re.compile(r"(?i)^\W*(?:я\s+бы|посоветовала|совет|лучше|стоит|надо|нужно|главное|сначала|обязательно|не\s+бой|не\s+спеш|"
-                         r"не\s+стесня|попроб|[а-яё]+(?:ться|ть|ти|йте|ите)\b)|\bпосоветовала\s+бы\b|\bя\s+бы\b")
+                         r"не\s+стесня|попроб|[а-яё]+(?:ться|ть|ти|йте|ите)\b|(?!(?:они|мои|твои|свои|такси|ничего)\b)[а-яё]{4,}(?:и|й|ь)\b)"
+                         r"|\bпосоветовала\s+бы\b|\bя\s+бы\b")
 WHY_ITEM = re.compile(r"почему|зачем|отчего|объясн|как\s+работ|устро|что\s+такое|из-за")
 
 
@@ -808,8 +814,31 @@ class MiraRuntime:
         return choice, f"examples:{best['id']}", best.get("topic")
 
     def _example_reply(self, text):
-        """Team Q&A topics: the question is close to one of the team's example questions."""
-        item, score = self.bank.nearest(text, self._recent_topics(), self.mode)
+        """Team Q&A topics: the question is close to one of the team's example questions.
+        If the nearest topic is rejected (different subject), the next few are tried."""
+        tried = set()
+        for _ in range(4):
+            found = self._example_once(text, tried)
+            if found is False:
+                continue
+            if found:
+                return found
+            break
+        return self._shaped_example(text)
+
+    def _example_once(self, text, tried):
+        """One candidate: an answer, None (stop: nothing fits), or False (rejected — try the next topic)."""
+        recent = set(self._recent_topics())
+        item, score, best_index = None, 0.0, None
+        for index, value in self.bank.example_scores(grams(text)).items():
+            candidate = self.bank.intents[index]
+            if value <= score or index in tried or (candidate.get("mode") and candidate["mode"] != self.mode):
+                continue
+            if candidate.get("after") and not set(candidate["after"]) & recent:
+                continue
+            item, score, best_index = candidate, value, index
+        if best_index is not None:
+            tried.add(best_index)
         if item is None:
             return None
         predicted = self._predict(text)
@@ -829,9 +858,9 @@ class MiraRuntime:
                                  norm(to_ty(text))):
                 return None   # «Сколько вам тогда было лет?» refers to the previous answer, not to a topic
         if score < need and not (agrees and score >= 0.4):
-            return self._shaped_example(text)
+            return None
         if not lexical_fit(text, item, self.bank, loose=item.get("source_kind") == "generated" and score >= 0.82):
-            return self._shaped_example(text)      # similar letters, different subject
+            return False      # similar letters, different subject — try the next topic
         key = self._key_for(item, text)
         again = self._pinned_repeat(key)
         if again:
