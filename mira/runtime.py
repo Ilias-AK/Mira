@@ -880,7 +880,8 @@ class MiraRuntime:
 
     def _kind(self, question):
         q = to_ty(FILLERS.sub("", question) or question)
-        whole = getattr(self, "_asked", None) or question
+        asked = getattr(self, "_asked", None)
+        whole = asked if asked and norm(question).strip() in norm(asked) else question   # весь вопрос, если это его часть
         shape = question_shape(whole)
         if shape == "reply" and self.fallbacks.get("reply_situation"):
             positive = POSITIVE_SITUATION.search(to_ty(whole)) and self.fallbacks.get("reply_positive")
