@@ -127,12 +127,19 @@ def build(paths):
         return kept
 
     for path in paths:
+        # ответ-заготовка, повторённый в трёх и более темах файла («Сохранила бы вежливый тон…»), — не ответ
+        # на конкретную ситуацию: убираем его, а тему, где остались только заготовки, не берём совсем
+        counts = Counter(a for b in parse(path) for a in set(b["answers"]))
+        stock = {a for a, n in counts.items() if n >= 3}
         stem = re.sub(r"\W+", "_", Path(path).stem.replace("hall_qa_", "")).strip("_")
         fixes = all_fixes.get(Path(path).name, {})
         previous = None
         for number, block in enumerate(parse(path), 1):
             ident = f"qa_{stem}_{number:03d}"
-            questions, answers = clean_questions(block["questions"]), clean_answers(block["answers"])
+            specific = [a for a in block["answers"] if a not in stock]
+            if len(specific) < len(block["answers"]):
+                dropped["ответ-заготовка (повтор в 3+ темах)"] += len(block["answers"]) - len(specific)
+            questions, answers = clean_questions(block["questions"]), clean_answers(specific)
             if not questions or not answers:
                 dropped["тема целиком"] += 1
                 continue

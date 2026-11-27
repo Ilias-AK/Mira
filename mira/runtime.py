@@ -258,7 +258,23 @@ LANG_ADJ = re.compile(r"\b(русск|казахск|английск|немец
                       r"кыргызск|киргизск|российск|казахстанск|американск|европейск)\w*")
 
 
-def lexical_fit(question, item, bank=None):
+SHAPE_WORDS = set("""ответишь скажешь напишешь ответила сказала написала ответил сказал написал отреагировала отреагируешь
+посоветовал посоветовала посоветуешь посоветовать посоветуй совет человеку человек который которая которые хочет может
+ему ней нему извинился извинилась извиняется извинились что бы тебе твою твой твоя твоих""".split())
+
+
+def coverage(question, item):
+    """Доля слов ситуации (без «что бы ты ему ответил», «посоветовал человеку, который»), которые есть в теме.
+    Нужно хотя бы два совпавших слова."""
+    words = [w for w in significant(question) if w not in SHAPE_WORDS]
+    if not words:
+        return 0.0
+    hay = {_stem(w) for w in re.findall(r"[а-яё]+", norm(" ".join(item.get("examples", []) + item.get("answers", []))))}
+    covered = sum(1 for w in words if _stem(w) in hay)
+    return covered / len(words) if covered >= min(2, len(words)) else 0.0
+
+
+def lexical_fit(question, item, bank=None, loose=False):
     """A topic found by similarity or by the model must share words with the question.
 
     - a word in quotes («окно») has to occur in the topic;
@@ -282,7 +298,7 @@ def lexical_fit(question, item, bank=None):
         covered = sum(1 for w in words if _stem(w) in hay)
         if covered / len(words) < 0.33:   # one word of three is enough
             return False
-    if bank is not None and len(words) >= 2 and item.get("source_kind") == "generated":
+    if bank is not None and not loose and len(words) >= 2 and item.get("source_kind") == "generated":
         df = _doc_freq(bank)   # only for generated topics: the team's own ones are tuned already
         stems = [_stem(w) for w in words]
         rarest = min((df.get(st, 0), st) for st in stems)[1]   # a word no topic knows («ВВП») counts as rarest
@@ -763,6 +779,34 @@ class MiraRuntime:
 
         return re.sub(r"[А-Яа-яЁё]+", fix, question)
 
+    def _shaped_example(self, text):
+        """«Ситуация — что бы ты ответил?» / «что бы ты посоветовал…?»: ситуации разные, буквы совпадают меньше,
+        поэтому ищем только среди тем того же вида (файлы 13 / 12 и 04) и требуем половину слов ситуации."""
+        shape = getattr(self, "_shape", None)
+        files = {"reply": ("_13_",), "advice": ("_12_", "_04_")}.get(shape)
+        if not files:
+            return None
+        need = 0.4 if shape == "reply" else 0.5
+        best, best_score = None, 0.0
+        recent = set(self._recent_topics())
+        for index, value in self.bank.example_scores(grams(text)).items():
+            item = self.bank.intents[index]
+            if value < need or value <= best_score or not any(f in item.get("file", "") for f in files):
+                continue
+            if item.get("after") and not set(item["after"]) & recent:
+                continue
+            if coverage(text, item) < 0.6 or not lexical_fit(text, item, self.bank, loose=True):
+                continue
+            best, best_score = item, value
+        if best is None:
+            return None
+        answers = self._answers_for(best, text)
+        choice = self._pick(answers, best["id"] + text) if answers else None
+        if not choice:
+            return None
+        self._pending_pin = self._key_for(best, text)
+        return choice, f"examples:{best['id']}", best.get("topic")
+
     def _example_reply(self, text):
         """Team Q&A topics: the question is close to one of the team's example questions."""
         item, score = self.bank.nearest(text, self._recent_topics(), self.mode)
@@ -785,9 +829,9 @@ class MiraRuntime:
                                  norm(to_ty(text))):
                 return None   # «Сколько вам тогда было лет?» refers to the previous answer, not to a topic
         if score < need and not (agrees and score >= 0.4):
-            return None
-        if not lexical_fit(text, item, self.bank):
-            return None      # similar letters, different subject
+            return self._shaped_example(text)
+        if not lexical_fit(text, item, self.bank, loose=item.get("source_kind") == "generated" and score >= 0.82):
+            return self._shaped_example(text)      # similar letters, different subject
         key = self._key_for(item, text)
         again = self._pinned_repeat(key)
         if again:
