@@ -75,19 +75,34 @@ def bad_answer(text):
     return None
 
 
+def load_fixes():
+    """data/team_raw/factcheck_gen.json: {file: {старый ответ: новый ответ или None (удалить)}}."""
+    path = HERE / "data/team_raw/factcheck_gen.json"
+    fixes = {}
+    if path.is_file():
+        for fix in json.loads(path.read_text(encoding="utf-8")).get("fixes", []):
+            fixes.setdefault(fix["file"], {})[fix["before"]] = fix.get("after")
+    return fixes
+
+
 def build(paths):
     held, taken = held_out_questions(), team_questions()
+    all_fixes = load_fixes()
     dropped = Counter()
     examples_dropped = []
     intents = []
 
-    def clean_questions(questions):
+    def clean_questions(questions, follow=False):
         kept = []
         for q in questions:
             key = norm(q)
             if key in held:
                 dropped["вопрос из проверки"] += 1
                 examples_dropped.append(("проверка", q))
+            elif follow:
+                # «А почему?» — общий вопрос-уточнение у многих тем; его различает предыдущая тема (after)
+                if key not in {norm(k) for k in kept}:
+                    kept.append(q)
             elif key in taken:
                 dropped["вопрос уже есть"] += 1
             else:
@@ -98,6 +113,11 @@ def build(paths):
     def clean_answers(answers):
         kept = []
         for a in answers:
+            if a in fixes:
+                dropped["исправлено по проверке фактов" if fixes[a] else "удалено по проверке фактов"] += 1
+                a = fixes[a]
+                if not a:
+                    continue
             why = bad_answer(a)
             if why:
                 dropped["ответ: " + why] += 1
@@ -108,6 +128,7 @@ def build(paths):
 
     for path in paths:
         stem = re.sub(r"\W+", "_", Path(path).stem.replace("hall_qa_", "")).strip("_")
+        fixes = all_fixes.get(Path(path).name, {})
         previous = None
         for number, block in enumerate(parse(path), 1):
             ident = f"qa_{stem}_{number:03d}"
@@ -123,7 +144,7 @@ def build(paths):
             intents.append(item)
             parent = ident
             for k, follow in enumerate(block.get("follows", []), 1):
-                fq, fa = clean_questions(follow["questions"]), clean_answers(follow["answers"])
+                fq, fa = clean_questions(follow["questions"], follow=True), clean_answers(follow["answers"])
                 if not fq or not fa:
                     dropped["уточнение целиком"] += 1
                     continue

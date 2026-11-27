@@ -243,13 +243,19 @@ _DF = {"bank": None, "df": {}}
 def _doc_freq(bank):
     """How many topics use each word stem (examples and answers): rare stems carry the meaning."""
     if _DF["bank"] is not bank:
-        df = {}
+        df, wdf = {}, {}
         for item in bank.intents:
-            text = norm(" ".join(item.get("examples", []) + item.get("answers", [])))
-            for stem in {_stem(w) for w in re.findall(r"[а-яё]+", text) if len(w) >= 3}:
+            words = {w for w in re.findall(r"[а-яё]+", norm(" ".join(item.get("examples", []) + item.get("answers", [])))) if len(w) >= 3}
+            for stem in {_stem(w) for w in words}:
                 df[stem] = df.get(stem, 0) + 1
-        _DF.update(bank=bank, df=df)
+            for w in words:
+                wdf[w] = wdf.get(w, 0) + 1
+        _DF.update(bank=bank, df=df, wdf=wdf)
     return _DF["df"]
+
+
+LANG_ADJ = re.compile(r"\b(русск|казахск|английск|немецк|французск|китайск|японск|турецк|арабск|испанск|итальянск|корейск|узбекск|"
+                      r"кыргызск|киргизск|российск|казахстанск|американск|европейск)\w*")
 
 
 def lexical_fit(question, item, bank=None):
@@ -266,6 +272,12 @@ def lexical_fit(question, item, bank=None):
         if words and not any(_stem(w) in hay for w in words):
             return False
     words = significant(question)
+    # «в казахском алфавите» — не тема «в русском алфавите»: другой язык или страна в вопросе и в теме
+    asked_lang = set(LANG_ADJ.findall(norm(question)))
+    if asked_lang:
+        topic_lang = set(LANG_ADJ.findall(hay_text))
+        if topic_lang and not asked_lang & topic_lang:
+            return False
     if len(words) >= 3:
         covered = sum(1 for w in words if _stem(w) in hay)
         if covered / len(words) < 0.33:   # one word of three is enough
@@ -274,7 +286,9 @@ def lexical_fit(question, item, bank=None):
         df = _doc_freq(bank)   # only for generated topics: the team's own ones are tuned already
         stems = [_stem(w) for w in words]
         rarest = min((df.get(st, 0), st) for st in stems)[1]   # a word no topic knows («ВВП») counts as rarest
-        specific = [st for st in stems if df.get(st, 0) <= 15]   # «метров», «алфавите»: words few topics use
+        wdf = _DF["wdf"]
+        # «метров», «алфавите», «казахском», «казахстанцев»: слова, которые знают немногие темы
+        specific = [_stem(w) for w in words if df.get(_stem(w), 0) <= 15 or wdf.get(w, 0) <= 6]
         if rarest not in hay or any(st not in hay for st in specific):
             return False
     return True
