@@ -272,6 +272,49 @@ class HallFixes(unittest.TestCase):
         winter = self.ask("Что бы ты посоветовал человеку, который впервые приехал в Астану зимой?")[0]
         self.assertEqual(winter.route, "bank:hall_advice_astana_winter")
 
+    # --- промахи закрытого теста с нейросетью (27.11) ---------------------------------------
+    def test_bot_accusations(self):
+        for q in ("Вы случаем не бот?", "Вы же бот, признайтесь уже", "Ты говоришь как робот из фильма"):
+            answer = self.ask(q)[0]
+            self.assertEqual(answer.route, "bank:hall_bot", q)
+            self.assertTrue(answer.text.startswith("Нет"), (q, answer.text))
+        answer = self.ask("Вы человек или очень хорошая программа?")[0]
+        self.assertRegex(answer.text.lower(), r"\bя\s+(?:человек|настоящ)")
+        for q in ("Ты сейчас подглядываешь в шпаргалку?", "Вы сейчас ищете ответы в интернете?"):
+            answer = self.ask(q)[0]
+            self.assertEqual(answer.route, "cheat", q)
+
+    def test_unit_facts_and_follow_ups(self):
+        for q, expected in (("Сколько секунд в минуте?", "60"), ("Сколько дней в високосном году?", "366"),
+                            ("Сколько градусов в прямом угле?", "90"), ("Сколько сторон у шестиугольника?", "Шесть")):
+            self.assertEqual(self.ask(q)[0].text, expected)
+        self.assertEqual(self.ask("Сколько будет 1000 минус 7?", "А ещё минус 7?")[1].text, "986")
+        self.assertEqual(self.ask("Сколько будет 12 умножить на 12?", "Вы уверены? Пересчитайте")[1].text, "Да, 144")
+
+    def test_context_words_do_not_hijack(self):
+        cases = {"Что подарить подруге на день рождения, если мало денег?": "bank:hall_birth",
+                 "Что тяжелее переносить: жару или холод?": "bank:team_kg",
+                 "Как быстро выучить стихотворение?": "bank:hall_poem",
+                 "Сколько стоит проезд в автобусе в Астане?": "bank:music_transport",
+                 "Как пожарить яичницу, чтобы не пригорела?": "bank:burn_food",
+                 "Что вы делаете, когда грустно?": "bank:sad",
+                 "Назовите пять цветов радуги": "bank:hall_why_rainbow",
+                 "Сколько времени в день сидите в телефоне?": "clock"}
+        for q, bad in cases.items():
+            self.assertNotEqual(self.ask(q)[0].route, bad, q)
+        self.assertEqual(self.ask("Что тяжелее: килограмм ваты или килограмм железа?")[0].route, "bank:team_kg")
+
+    def test_round_order_memory(self):
+        answers = self.ask("Добрый день", "Как дела?", "Что я спросил самым первым?")
+        self.assertIn("Добрый день", answers[2].text)
+        answers = self.ask("Привет", "Как дела?", "Сколько вопросов я вам уже задал?")
+        self.assertIn("3", answers[2].text)
+
+    def test_vy_past_reflexive(self):
+        from mira.hall import to_vy
+        self.assertIn("вы занимались", to_vy("Если нет, то чем ты занималась вообще?"))
+        self.assertEqual(to_ty("Вы человек или программа?"), "ты человек или программа?")
+
     # --- три вопроса из видео: ответы не хуже, чем были -----------------------------------
     def test_video_questions_answer_on_topic(self):
         for q in ("Почему после дождя появляется радуга?", "Что посоветовать впервые приехавшему в Астану зимой?",

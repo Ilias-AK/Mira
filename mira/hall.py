@@ -56,7 +56,7 @@ def to_ty(text: str) -> str:
                 continue
             out.append(PRONOUNS[w])
             continue
-        if plural and len(w) >= 3 and re.search(r"[аеиыяу]ли$", w) and "вы" in words[max(0, i - 6):i]:
+        if plural and len(w) >= 3 and w not in ("или", "ли", "али") and re.search(r"[аеиыяу]ли$", w) and "вы" in words[max(0, i - 6):i]:
             out.append(w[:-1] + "а")      # вы были -> ты была (Mira is female)
             continue
         if plural and len(w) > 4 and w not in NOT_VERBS:
@@ -68,7 +68,7 @@ def to_ty(text: str) -> str:
                 w = w[:-3] + "ешь"
             elif w.endswith("ите"):
                 w = w[:-3] + "ишь"
-            elif re.search(r"[аеиыяу]ли$", w) and any(p in ("вы",) for p in words[max(0, i - 6):i]):
+            elif w not in ("или", "ли", "али") and re.search(r"[аеиыяу]ли$", w) and any(p in ("вы",) for p in words[max(0, i - 6):i]):
                 w = w[:-1] + "а"          # вы были -> ты была (Mira is female)
             elif re.search(r"[аеиыяу]лись$", w) and "вы" in words[max(0, i - 6):i]:
                 w = w[:-3] + "ась"
@@ -192,6 +192,8 @@ def to_vy(text: str, protect=frozenset()) -> str:
         return m.group(1) + m.group(2) + word + "ли"
     # "вы (это уже) решил/решила" -> "вы решили": a past verb up to three words after "вы"
     text = re.sub(r"\b(вы|Вы)((?:\s+[а-яё]+){0,3}?\s+)([а-яё]{1,}?[аеиоуыя])(ла|л)\b", past, text)
+    text = re.sub(r"\b(вы|Вы)((?:\s+[а-яё]+){0,3}?\s+)([а-яё]+?[аеиоуыя])(лась|лся)\b",
+                  lambda m: m.group(1) + m.group(2) + m.group(3) + "лись", text)
     short = {"прав": "правы", "права": "правы", "доволен": "довольны", "довольна": "довольны", "уверен": "уверены",
              "уверена": "уверены", "готов": "готовы", "готова": "готовы", "рад": "рады", "рада": "рады",
              "согласен": "согласны", "согласна": "согласны", "должен": "должны", "должна": "должны"}
@@ -200,6 +202,7 @@ def to_vy(text: str, protect=frozenset()) -> str:
     # imperative right after "вы": "вы ищи" -> "вы ищите" (not past plural "спросили")
     return re.sub(r"\b(вы|Вы)(\s+)([а-яё]+(?:[^л]и|ь))\b",
                   lambda m: m.group(1) + m.group(2) + (m.group(3) + "те" if m.group(3).lower() not in NOT_2SG
+                                                       and not m.group(3).lower().endswith(("лись", "лась", "лся", "лось"))
                                                        and m.group(3).lower() not in ("сами", "мои", "свои", "ваши", "они", "им")
                                                        else m.group(3)), text)
 
@@ -245,7 +248,7 @@ SEASONS = {12: "зима", 1: "зима", 2: "зима", 3: "весна", 4: "в
 
 def clock_answer(question: str, now: _dt.datetime | None = None) -> str | None:
     q = to_ty(question)
-    if re.search(r"\b(?:самый|самое|самая|любим\w*|нелюбим\w*|тяжел\w*|лучш\w*|был\s+бы|если|запомн\w*|просил\w*|загадал\w*|выбрал\w*|назвал\w*|сказал\w*|говорил\w*)\b", q):
+    if re.search(r"\b(?:самый|самое|самая|любим\w*|нелюбим\w*|тяжел\w*|лучш\w*|был\s+бы|если|запомн\w*|просил\w*|загадал\w*|выбрал\w*|назвал\w*|сказал\w*|говорил\w*|в\s+день|в\s+неделю|в\s+месяц|сидиш\w*|сидите|трат\w*|занима\w*|уход\w*|провод\w*)\b", q):
         return None
     now = now or _dt.datetime.now()
     if re.search(r"\b(?:какое|какой)\s+(?:сегодня\s+)?(?:число|дата)\b|\bкакое\s+сегодня\b|\bсегодняшн\w+\s+дат", q):

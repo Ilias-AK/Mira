@@ -172,7 +172,7 @@ def latin_dominant(text):
 
 
 HUMAN_Q = re.compile(r"^\W*(?:а\s+|ну\s+|так\s+)?(?:ты|вы)\s+(?:(?:точно|правда|вообще|действительно|всё-таки|все-таки|живой|живая|настоящий|настоящая|реальный|реальная)\s+)*человек\s*\??\W*$")
-EITHER_HUMAN = re.compile(r"\bчеловек\s+или\s+(?:бот|робот|ии|машина|нейросеть|программа)\b|\b(?:бот|робот|ии|машина|нейросеть|программа)\s+или\s+человек\b")
+EITHER_HUMAN = re.compile(r"\bчеловек\s+или\s+(?:[а-яё]+\s+){0,2}(?:бот|робот|ии|машина|нейросеть|программа)\b|\b(?:бот|робот|ии|машина|нейросеть|программа)\s+или\s+человек\b")
 
 
 @lru_cache(maxsize=512)
@@ -280,12 +280,20 @@ def lexical_fit(question, item, bank=None):
     return True
 
 
+# «Ты подглядываешь в шпаргалку? / Тебе кто-то пишет ответы?» — обвинение в подсказках, а не вопрос да/нет
+CHEAT_Q = re.compile(r"\b(?:шпаргалк\w*|подглядыва\w*|подсказыва\w*|подсказк\w*|интернет\w*|гугл\w*|сценари\w*)\b"
+                     r"|\bкто-?\s?то\s+(?:тебе\s+)?(?:пишет|подсказывает|отвечает|диктует)|\bищешь\s+ответ\w*|\bчитаешь\s+(?:ответ\w*|с\s+экрана|с\s+листа)")
+CHEAT_ITEMS = ("qa_gen_07_bot_008", "qa_gen_07_bot_083")
+# «А ещё минус 7?», «Вы уверены? Пересчитайте» сразу после счёта
+MORE_OP = re.compile(r"^\W*(?:а\s+)?(?:ещ[её]|теперь|потом|и)?\s*(плюс|минус|умножить\s+на|разделить\s+на|прибавить|отнять|поделить\s+на)\s+(\d+)\s*\??\W*$")
+SURE_Q = re.compile(r"\b(?:уверен\w*|пересчита\w*|точно|проверь\w*|правильно)\b")
+
 # Форма вопроса, как в контрольных: «…Что бы ты ему ответил?», «Что бы ты посоветовал…?», «Почему…? Объясни»
 REPLY_Q = re.compile(r"\b(?:что|как)\s+(?:же\s+)?(?:бы\s+)?(?:ты\s+)?(?:бы\s+)?(?:(?:ему|ей|им|ему|ней|нему)\s+)?(?:бы\s+)?"
                      r"(?:ответила|сказала|написала|отреагировала|ответить|сказать|написать)\b"
                      r"|\bчто\s+(?:ты\s+)?(?:ему\s+|ей\s+)?(?:ответишь|скажешь|напишешь)\b|\bкак\s+(?:ты\s+)?(?:отреагируешь|ответишь|поступишь)\b"
                      r"|\bкак\s+бы\s+ты\s+(?:отреагировала|поступила|ответила)\b")
-ADVICE_Q = re.compile(r"\bпосовет\w*|\bкакой\s+(?:бы\s+)?совет|\bчто\s+бы\s+ты\s+(?:сделала|делала)\s+на\s+(?:его|ее|её|их|мо[её]м)\s+месте")
+ADVICE_Q = re.compile(r"\bпосовет\w*|\bкакой\s+(?:бы\s+)?совет|^\W*что\s+(?:можно\s+)?(?:подарить|приготовить|взять\s+с\s+собой)\b|\bчто\s+(?:мне\s+|ему\s+|ей\s+)?делать,?\s+(?:если|когда)\b|\bкак\s+быть,?\s+(?:если|когда)\b|\bчто\s+бы\s+ты\s+(?:сделала|делала)\s+на\s+(?:его|ее|её|их|мо[её]м)\s+месте")
 EXPLAIN_Q = re.compile(r"^\W*(?:а\s+)?(?:почему|зачем|отчего|из-за\s+чего|как\s+работает|как\s+устроен\w*|как\s+образуется|что\s+такое)\b|\bобъясни\w*")
 POSITIVE_SITUATION = re.compile(r"\b(?:подар\w*|комплимент\w*|поздрави\w*|помог\w*|похвали\w*|поддержа\w*|поблагодари\w*|угости\w*|"
                                 r"сюрприз\w*|чаевы\w*|пригласи\w*)\b")
@@ -393,6 +401,7 @@ class MiraRuntime:
         self.counting = CountingState()
         self.round = RoundMemory()
         self._polarity, self._asked, self._round_declared, self._shape = None, None, False, None
+        self._last_number = None
         if hasattr(self, "generic"):
             self.generic.reset()
         self.memory = ConversationMemory(persona={"facts": self.profile.get("facts", []),
@@ -635,6 +644,8 @@ class MiraRuntime:
         for name in ("either", "yes_no"):
             if (self._polarity and name == "either") or shape in ("reply", "advice"):
                 continue
+            if name == "either" and REQUEST.match(question):
+                continue   # «Расскажите про бабушку или дедушку» — не выбор «Однозначно бабушку»
             found = getattr(self.generic, name)(question, self.seed)
             if found and norm(fill_gender(found, self.facts.gender)) not in self.used:
                 return found, name, self.topics[-1] if self.topics else name
@@ -860,7 +871,7 @@ class MiraRuntime:
         elif request:
             x = topic_phrase(request.group(3)) if request.group(3) else None
             answers, kind = (self.topic_answers["tell"] if request.group(1) else self.topic_answers["make"]), "request_topic"
-        elif ("?" not in q and 2 <= len(q.split()) <= 4 and not VERB_LIKE.search(q)
+        elif ("?" not in q and 2 <= len(q.split()) <= 4 and not VERB_LIKE.search(q) and not QUESTION_WORD_START.search(q.lower())
               and not re.search(r"\d+\s*[-+*/xх×:]\s*\d", q)
               and not all(w in INTERJECTIONS for w in re.findall(r"[а-яё]+", q.lower()))):
             x, answers, kind = topic_phrase(q), self.topic_answers["fragment"], "fragment"
@@ -1049,6 +1060,23 @@ class MiraRuntime:
             counted = self.counting.answer(question) or spoken_arithmetic(question)
             if counted:
                 text, route, topic = counted, "counting", "riddle"
+        if text is None and getattr(self, "_last_number", None) is not None:
+            more = MORE_OP.search(norm(question))
+            if more:
+                n, op = int(more.group(2)), more.group(1).split()[0]
+                value = {"плюс": self._last_number + n, "прибавить": self._last_number + n, "минус": self._last_number - n,
+                         "отнять": self._last_number - n, "умножить": self._last_number * n}.get(op)
+                if op in ("разделить", "поделить") and n and self._last_number % n == 0:
+                    value = self._last_number // n
+                if value is not None:
+                    text, route, topic = str(value), "counting", "riddle"
+            elif SURE_Q.search(norm(question)) and len(question.split()) <= 6:
+                text, route, topic = f"Да, {self._last_number}", "counting", "riddle"
+        if (text is None and CHEAT_Q.search(to_ty(question)) and re.search(r"\b(?:ты|тебе|тебя)\b", to_ty(question))
+                and not re.search(r"\bили\b", norm(question))):   # «сама или тебе подсказывают?» — это выбор
+            cheat = [a for k in CHEAT_ITEMS for a in self.bank.by_id.get(k, {}).get("answers", [])]
+            if cheat:
+                text, route, topic = self._pick(cheat, "cheat" + norm(question)), "cheat", "bot"
         if text is None:
             noted = self.facts.remember_definition(to_ty(question) if re.search(r"(?i)\bзапомните\b", question) else question)
             if noted:
@@ -1166,6 +1194,8 @@ class MiraRuntime:
         if exact_hit:   # a fixed answer: word for word, no typo, no «я же уже говорила», in any mode
             text = plain = exact_hit["answers"][0]
             route, topic, self._pending_pin = "exact:" + exact_hit["id"], exact_hit.get("topic"), None
+        first_number = re.match(r"^\W*(-?\d+)\b", text)
+        self._last_number = int(first_number.group(1)) if route == "counting" and first_number else None
         self.history += [{"role": "user", "text": question}, {"role": "assistant", "text": text}]
         self.aliases.append(self._aliases_for(question, topic))
         self.topics.append(topic)
