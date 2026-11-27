@@ -243,6 +243,35 @@ class HallFixes(unittest.TestCase):
             self.assertEqual(again.text, expected)    # без «Я же уже говорила» и без опечатки
             self.assertEqual(first.route, "exact:hall_why_rainbow")
 
+    # --- вопросы в стиле контрольных: ситуация / совет / объяснение -------------------------
+    def test_reply_situation_not_hijacked_by_context(self):
+        answer = self.ask("Подруга забыла про твой день рождения и извинилась. Что бы ты ей ответила?")[0]
+        self.assertNotEqual(answer.route, "bank:hall_birth")
+        self.assertNotIn("2006", answer.text)
+        answer = self.ask("Незнакомец в автобусе наступил тебе на ногу и извинился. Что скажешь?")[0]
+        self.assertNotEqual(answer.route, "bank:music_transport")
+
+    def test_positive_situation_gets_thanks(self):
+        answer = self.ask("Друг сделал тебе неожиданный подарок. Что бы ты ему ответил?")[0]
+        self.assertRegex(answer.text.lower(), r"спасибо|поблагодар|приятно|мило")
+
+    def test_advice_respects_season_and_shape(self):
+        answer = self.ask("Что бы ты посоветовал туристу, который летом приехал в Астану?")[0]
+        self.assertNotEqual(answer.route, "bank:hall_advice_astana_winter")
+        answer = self.ask("Что бы ты посоветовал человеку, который впервые приехал в Алматы?")[0]
+        self.assertNotIn("Звучит круто", answer.text)
+
+    def test_explain_not_small_talk(self):
+        for q in ("Почему на морозе нельзя лизать железо?", "Почему зимой в автобусе запотевают окна?"):
+            answer = self.ask(q)[0]
+            self.assertFalse(answer.route.startswith(("bank:weather", "bank:music_transport")), (q, answer.route))
+
+    def test_control_questions_unchanged(self):
+        late = self.ask("Друг опоздал на встречу на полчаса и извинился. Что бы ты ему ответил?")[0]
+        self.assertEqual(late.route, "bank:hall_friend_late")
+        winter = self.ask("Что бы ты посоветовал человеку, который впервые приехал в Астану зимой?")[0]
+        self.assertEqual(winter.route, "bank:hall_advice_astana_winter")
+
     # --- три вопроса из видео: ответы не хуже, чем были -----------------------------------
     def test_video_questions_answer_on_topic(self):
         for q in ("Почему после дождя появляется радуга?", "Что посоветовать впервые приехавшему в Астану зимой?",

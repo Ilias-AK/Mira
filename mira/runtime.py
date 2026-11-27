@@ -280,6 +280,37 @@ def lexical_fit(question, item, bank=None):
     return True
 
 
+# Форма вопроса, как в контрольных: «…Что бы ты ему ответил?», «Что бы ты посоветовал…?», «Почему…? Объясни»
+REPLY_Q = re.compile(r"\b(?:что|как)\s+(?:же\s+)?(?:бы\s+)?(?:ты\s+)?(?:бы\s+)?(?:(?:ему|ей|им|ему|ней|нему)\s+)?(?:бы\s+)?"
+                     r"(?:ответила|сказала|написала|отреагировала|ответить|сказать|написать)\b"
+                     r"|\bчто\s+(?:ты\s+)?(?:ему\s+|ей\s+)?(?:ответишь|скажешь|напишешь)\b|\bкак\s+(?:ты\s+)?(?:отреагируешь|ответишь|поступишь)\b"
+                     r"|\bкак\s+бы\s+ты\s+(?:отреагировала|поступила|ответила)\b")
+ADVICE_Q = re.compile(r"\bпосовет\w*|\bкакой\s+(?:бы\s+)?совет|\bчто\s+бы\s+ты\s+(?:сделала|делала)\s+на\s+(?:его|ее|её|их|мо[её]м)\s+месте")
+EXPLAIN_Q = re.compile(r"^\W*(?:а\s+)?(?:почему|зачем|отчего|из-за\s+чего|как\s+работает|как\s+устроен\w*|как\s+образуется|что\s+такое)\b|\bобъясни\w*")
+POSITIVE_SITUATION = re.compile(r"\b(?:подар\w*|комплимент\w*|поздрави\w*|помог\w*|похвали\w*|поддержа\w*|поблагодари\w*|угости\w*|"
+                                r"сюрприз\w*|чаевы\w*|пригласи\w*)\b")
+REPLY_LIKE = re.compile(r"(?i)^\W*(?:сказала|ответила|написала|спросила|попросила|промолчала|обняла|поблагодарила|обрадовалась|улыбнулась|"
+                        r"поблагодарю|скажу|отвечу|напишу|я\s+бы|наверное,?\s+(?:сказала|ответила|написала)|ничего\s+страшного|спасибо|"
+                        r"да\s+ладно|бывает|ой\b|ну\s+бывает|всё\s+нормально|все\s+нормально)|\b(?:сказала|ответила|написала|попросила)\s+бы\b")
+ADVICE_LIKE = re.compile(r"(?i)^\W*(?:я\s+бы|посоветовала|совет|лучше|стоит|надо|нужно|главное|сначала|обязательно|не\s+бой|не\s+спеш|"
+                         r"не\s+стесня|попроб|[а-яё]+(?:ться|ть|ти|йте|ите)\b)|\bпосоветовала\s+бы\b|\bя\s+бы\b")
+WHY_ITEM = re.compile(r"почему|зачем|отчего|объясн|как\s+работ|устро|что\s+такое|из-за")
+
+
+def question_shape(question):
+    """'reply' — ситуация и «что бы ты ответил?»; 'advice' — «что бы ты посоветовал…?»;
+    'explain' — «почему…? объясни» не о себе; иначе None."""
+    q = to_ty(question)
+    m = REPLY_Q.search(q)
+    if m and len(re.findall(r"[а-яё]+", q[:m.start()])) >= 3:
+        return "reply"
+    if ADVICE_Q.search(q):
+        return "advice"
+    if EXPLAIN_Q.search(q) and not re.search(r"\b(?:ты|тебе|тебя|тобой|твой|твоя|твое|твоё|твои|твоего|твоей)\b", q):
+        return "explain"
+    return None
+
+
 COMPARE = re.compile(r"\bчем\s+.+?\s+отлича\w*\s+от\b|\bв\s+ч[её]м\s+(?:разница|отличие)\b|\bразница\s+между\b|\bотлича\w*\s+.+?\s+от\b")
 QWORD_FIXES = {"почему", "зачем", "сколько", "откуда"}   # long enough that one letter off is still unambiguous («какао» ≠ «какая»)
 
@@ -361,7 +392,7 @@ class MiraRuntime:
         self.facts = UserFacts()
         self.counting = CountingState()
         self.round = RoundMemory()
-        self._polarity, self._asked, self._round_declared = None, None, False
+        self._polarity, self._asked, self._round_declared, self._shape = None, None, False, None
         if hasattr(self, "generic"):
             self.generic.reset()
         self.memory = ConversationMemory(persona={"facts": self.profile.get("facts", []),
@@ -398,18 +429,24 @@ class MiraRuntime:
             self._match_cache = (key, self.bank.match([to_ty(text), text], self._recent_topics(), turn_index, self.mode))
         return self._match_cache[1]
 
-    def _answers_for(self, item, question, check_numbers=True):
+    def _answers_for(self, item, question, check_numbers=True, check_shape=False):
         """Existing replies of a topic that fit this question: Russian (unless asked), right yes/no, no foreign numbers.
 
         check_numbers=False for regex rules: a rule written for this very question («28 дней») knows its numbers."""
         polarity = (getattr(self, "_polarity", None) if item.get("topic") == "bot" else None) or human_question(question)
+        shape = getattr(self, "_shape", None)
         out = []
         for a in item["answers"]:
             if foreign_answer(a, question) or latin_dominant(a) or (check_numbers and number_conflict(a, getattr(self, "_asked", question))):
                 continue
             fitted = fit_polarity(a, polarity) if polarity else a
-            if fitted:
-                out.append(fitted)
+            if not fitted:
+                continue
+            if check_shape and shape == "reply" and not REPLY_LIKE.search(fitted):
+                continue   # «Подруга забыла про день рождения. Что ответишь?» — не «Четырнадцатого марта»
+            if check_shape and shape == "advice" and not ADVICE_LIKE.search(fitted):
+                continue   # совет, а не «Звучит круто»
+            out.append(fitted)
         return out
 
     def _key_for(self, item, question, kind="bank"):
@@ -488,14 +525,18 @@ class MiraRuntime:
             if rest:
                 return ("Привет! " + rest if turn_index == 0 else rest), item
         compare = COMPARE.search(to_ty(text))
+        shape = getattr(self, "_shape", None)
         for item in self._matches(text, turn_index):
+            if shape == "explain" and not (item.get("topic") == "know" or item["id"].startswith(("hall_r_", "hall_why"))
+                                           or WHY_ITEM.search(" ".join(item.get("patterns", []) + item.get("examples", [])))):
+                continue   # «Почему на морозе нельзя лизать железо?» — не болтовня про погоду
             if compare and item.get("priority", 0) <= 0:
                 continue     # «Чем бешбармак отличается от плова?» is not «Пробовала, конечно»
             key = self._key_for(item, text)
             again = self._pinned_repeat(key)
             if again:
                 return again, item
-            answers = self._answers_for(item, text, check_numbers=False)
+            answers = self._answers_for(item, text, check_numbers=False, check_shape=True)   # regex по словам контекста
             if not answers:
                 continue
             choice = self._pick(answers, item["id"] + text, allow_question=bool(item.get("ask")))
@@ -581,17 +622,18 @@ class MiraRuntime:
                 return yes_no, "yes_no", self.topics[-1] if self.topics else "yes_no"
         if candidate:
             return candidate, ("repeat_topic:" if self._repeat_hit else "bank:") + item["id"], item.get("topic")
-        fkey = frame_key(question)
+        shape = getattr(self, "_shape", None)
+        fkey = frame_key(question) if shape != "reply" else None
         if fkey is not None:
             again = self._pinned_repeat(self._pin_key("frame", fkey))
             if again:
                 return again, "repeat_topic", "frame"
-        framed = frame_answer(question, self.used, self.seed)
+        framed = frame_answer(question, self.used, self.seed) if shape != "reply" else None
         if framed:
             self._pending_pin = self._pin_key("frame", fkey) if fkey is not None else None
             return framed, "frame", "frame"
         for name in ("either", "yes_no"):
-            if self._polarity and name == "either":
+            if (self._polarity and name == "either") or shape in ("reply", "advice"):
                 continue
             found = getattr(self.generic, name)(question, self.seed)
             if found and norm(fill_gender(found, self.facts.gender)) not in self.used:
@@ -838,7 +880,12 @@ class MiraRuntime:
 
     def _kind(self, question):
         q = to_ty(FILLERS.sub("", question) or question)
-        if ADVICE.search(q):
+        whole = getattr(self, "_asked", None) or question
+        shape = question_shape(whole)
+        if shape == "reply" and self.fallbacks.get("reply_situation"):
+            positive = POSITIVE_SITUATION.search(to_ty(whole)) and self.fallbacks.get("reply_positive")
+            return "reply_positive" if positive else "reply_situation"
+        if ADVICE.search(q) or shape == "advice":
             return "advice"
         if "?" in q or QUESTION_WORD_START.search(q):
             wh = QUESTION_WORD.search(q) or QUESTION_WORD_START.search(q)
@@ -968,6 +1015,7 @@ class MiraRuntime:
         hall = self.mode == "hall"
         exact_hit = self._exact(question)
         self._asked, self._polarity = question, human_question(question)
+        self._shape = question_shape(question)
         slots_before = (list(self.round.items), list(self.round.numbers), self.round.code)
         self.round.observe(question, to_ty(question))
         self._round_declared = slots_before != (list(self.round.items), list(self.round.numbers), self.round.code)
@@ -1070,7 +1118,8 @@ class MiraRuntime:
                 route, topic = "fallback:" + kind, "fallback"
         if text is None:
             kind = self._kind(self._fix_question_words(question))
-            text = self._pick(self.fallbacks.get(kind, []), kind) or self._pick(
+            # разные вопросы — разные заглушки (одинаковый вопрос — та же)
+            text = self._pick(self.fallbacks.get(kind, []), kind + norm(question)) or self._pick(
                 sum((v for v in self.fallbacks.values()), []), "any") or "Хм)"
             route, topic = "fallback:" + kind, "fallback"
 
