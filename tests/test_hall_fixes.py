@@ -315,6 +315,28 @@ class HallFixes(unittest.TestCase):
         self.assertIn("вы занимались", to_vy("Если нет, то чем ты занималась вообще?"))
         self.assertEqual(to_ty("Вы человек или программа?"), "ты человек или программа?")
 
+    # --- ночная проверка устойчивости (28.11) ------------------------------------------------
+    def test_numbers_make_questions_different(self):
+        answers = self.ask("Сколько будет 17 умножить на 3?", "Сколько будет 7 умножить на 8?", "Сколько будет 7 умножить на 8?")
+        self.assertEqual(answers[1].text, "56")
+        self.assertEqual(answers[2].route, "repeat")
+
+    def test_frames_are_not_pinned(self):
+        answers = self.ask("Что бы вы выбрали: жить в деревне или в мегаполисе?",
+                           "Что бы вы выбрали: всегда опаздывать на 10 минут или приходить на 20 минут раньше?")
+        self.assertFalse(answers[1].route.startswith("repeat"), answers[1].route)
+
+    def test_distress_gets_help_not_a_joke(self):
+        for q in ("Я хочу умереть", "Мне очень плохо"):
+            answer = self.ask(q)[0]
+            self.assertEqual(answer.route, "distress", q)
+        self.assertIn("150", self.ask("Не хочу жить")[0].text)
+
+    def test_foreign_and_name_call(self):
+        self.assertEqual(self.ask("Hello, how are you?")[0].route, "foreign_input")
+        self.assertEqual(self.ask("Мира?")[0].route, "name_call")
+        self.assertEqual(self.ask("Повтори за мной: я бот")[0].route, "bank:hall_bot")
+
     # --- три вопроса из видео: ответы не хуже, чем были -----------------------------------
     def test_video_questions_answer_on_topic(self):
         for q in ("Почему после дождя появляется радуга?", "Что посоветовать впервые приехавшему в Астану зимой?",

@@ -319,6 +319,10 @@ def lexical_fit(question, item, bank=None, loose=False):
 CHEAT_Q = re.compile(r"\b(?:шпаргалк\w*|подглядыва\w*|подсказыва\w*|подсказк\w*|интернет\w*|гугл\w*|сценари\w*)\b"
                      r"|\bкто-?\s?то\s+(?:тебе\s+)?(?:пишет|подсказывает|отвечает|диктует)|\bищешь\s+ответ\w*|\bчитаешь\s+(?:ответ\w*|с\s+экрана|с\s+листа)")
 CHEAT_ITEMS = ("qa_gen_07_bot_008", "qa_gen_07_bot_083")
+# Тяжёлое состояние собеседника: не «Мне такое близко», а по-человечески и с телефоном помощи
+SEVERE = re.compile(r"\b(?:хочу\s+умереть|не\s+хочу\s+жить|покончить\s+с\s+собой|убить\s+себя|суицид\w*|самоубийств\w*|"
+                    r"повеситься|жить\s+не\s+хочется|нет\s+смысла\s+жить)\b")
+DISTRESS = re.compile(SEVERE.pattern + r"|^\W*(?:помогите|помоги)\W*$|\bмне\s+(?:очень|совсем|так)\s+(?:плохо|тяжело|страшно)\b")
 # «А ещё минус 7?», «Вы уверены? Пересчитайте» сразу после счёта
 MORE_OP = re.compile(r"^\W*(?:а\s+)?(?:ещ[её]|теперь|потом|и)?\s*(плюс|минус|умножить\s+на|разделить\s+на|прибавить|отнять|поделить\s+на)\s+(\d+)\s*\??\W*$")
 SURE_Q = re.compile(r"\b(?:уверен\w*|пересчита\w*|точно|проверь\w*|правильно)\b")
@@ -669,13 +673,13 @@ class MiraRuntime:
             return candidate, ("repeat_topic:" if self._repeat_hit else "bank:") + item["id"], item.get("topic")
         shape = getattr(self, "_shape", None)
         fkey = frame_key(question) if shape != "reply" else None
-        if fkey is not None:
+        if False and fkey is not None:   # шаблон один на много разных вопросов — «уже отвечала» тут неверно
             again = self._pinned_repeat(self._pin_key("frame", fkey))
             if again:
                 return again, "repeat_topic", "frame"
         framed = frame_answer(question, self.used, self.seed) if shape != "reply" else None
         if framed:
-            self._pending_pin = self._pin_key("frame", fkey) if fkey is not None else None
+            self._pending_pin = None
             return framed, "frame", "frame"
         for name in ("either", "yes_no"):
             if (self._polarity and name == "either") or shape in ("reply", "advice"):
@@ -711,8 +715,9 @@ class MiraRuntime:
         q = re.sub(r"[^\w\s]", "", to_ty(question)).strip()
         if len(q.split()) < 2:
             return None
+        numbers = lambda t: (re.findall(r"\d+", t), NUMBER_WORD.findall(norm(t)))   # «7 на 8» и «9 на 7» — разные вопросы
         for previous_q, previous_a in reversed(self.qa):
-            if similarity(q, previous_q) >= 0.85:
+            if similarity(q, previous_q) >= 0.85 and numbers(q) == numbers(previous_q):
                 lead = ["Я же уже говорила:", "Уже отвечала:", "Как я уже говорила,"][len(self.qa) % 3]
                 answer = previous_a.rstrip()
                 return f"{lead} {self._lower_first(answer)}"
@@ -1143,6 +1148,18 @@ class MiraRuntime:
             clock = clock_answer(question)
             if clock:
                 text, route, topic = clock, "clock", "clock"
+        if text is None and DISTRESS.search(norm(question)):
+            options = self.fallbacks.get("distress_severe" if SEVERE.search(norm(question)) else "distress", [])
+            if options:
+                text, route, topic = self._pick(options, "distress" + norm(question)) or options[0], "distress", "support"
+        if text is None and latin_dominant(question) and len(re.findall(r"[A-Za-z]", question)) >= 4:
+            options = self.fallbacks.get("foreign_input", [])
+            if options:
+                text, route, topic = self._pick(options, "foreign" + norm(question)) or options[0], "foreign_input", "support"
+        if text is None and re.fullmatch(r"\W*(?:мира|гульмира|мирочка|мир)\W*", norm(question)):
+            options = self.fallbacks.get("name_call", [])
+            if options:
+                text, route, topic = self._pick(options, "name" + norm(question)) or options[0], "name_call", "short"
         if text is None:
             counted = self.counting.answer(question) or spoken_arithmetic(question)
             if counted:

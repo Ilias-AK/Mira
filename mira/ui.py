@@ -12,6 +12,7 @@ import secrets
 import threading
 import time
 import webbrowser
+from types import SimpleNamespace
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -126,7 +127,11 @@ class MiraUIApp:
         started = time.monotonic()
         with self.lock:
             memory_before = self._memory_snapshot()
-            result = self.runtime.answer(message)
+            try:
+                result = self.runtime.answer(message)
+            except Exception as error:   # на презентации лучше живая отговорка, чем ошибка в окне
+                self._log_error(message, error)
+                result = SimpleNamespace(text="Ой, отвлеклась. Давайте следующий вопрос", route="error_fallback", seconds=0.0)
             memory_updated = self._memory_snapshot() != memory_before
             if result.route.startswith("fallback") and self.log_misses:
                 self._log_miss(message, result.text, result.route)
@@ -144,6 +149,16 @@ class MiraUIApp:
             "characters": len(result.text),
             "memoryUpdated": memory_updated,
         }
+
+    def _log_error(self, message, error) -> None:
+        try:
+            import traceback
+            log = ROOT / "runs" / "ui_errors.log"
+            log.parent.mkdir(parents=True, exist_ok=True)
+            with log.open("a", encoding="utf-8") as handle:
+                handle.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')}\t{message}\n{traceback.format_exc()}\n")
+        except OSError:
+            pass
 
     def memory(self) -> dict:
         with self.lock:
@@ -330,7 +345,15 @@ def main() -> None:
     args = parser().parse_args()
     runtime = build_runtime(args)
     app = MiraUIApp(runtime, typing_delay=args.typing_delay, log_misses=not args.no_log_misses)
-    server = create_server(args.host, args.port, app)
+    server = None
+    for port in range(args.port, args.port + 10):   # порт занят (вторая копия, другая программа) — берём следующий
+        try:
+            server = create_server(args.host, port, app)
+            break
+        except OSError:
+            print(f"Порт {port} занят, пробую {port + 1}", flush=True)
+    if server is None:
+        raise SystemExit(f"Не удалось открыть порты {args.port}–{args.port + 9}: закройте другие окна Миры")
     url = f"http://{args.host}:{server.server_address[1]}"
     print(f"Mira UI: {url}", flush=True)
     print(f"{MODEL_NAME} · {'обычный чат' if args.chat else 'режим зала'} · {runtime.intent_status}", flush=True)

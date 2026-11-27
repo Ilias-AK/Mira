@@ -101,7 +101,9 @@ class DialogMemory:
             if not relaxed or not self.user or not re.search(r"\?|^\W*(?:что|какой|какая|какое|какую|какие|по\s+какому|на\s+какой|в\s+какой|где|куда|когда|сколько|кто|кого|с\s+кем)\b", q):
                 return None
             q_long = {stem(w) for w in content(q) if len(w) >= 5}
-            if not any(q_long & {stem(w) for w in content(item["text"])} for item in self.user[-8:]):
+            # without "я/мой" only a fresh statement counts, otherwise old notes leak into unrelated questions
+            about_me = re.search(r"\b(?:я|мне|меня|мой|моя|мое|моё|мои|моего|моей|моих)\b", q)
+            if not any(q_long & {stem(w) for w in content(item["text"])} for item in self.user[-8:] if about_me or item is self.user[-1]):
                 return None
         not_told = "Вы мне этого не говорили" if formal else "Ты мне этого не говорил{|а}"
         if not self.user:
