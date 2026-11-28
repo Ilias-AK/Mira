@@ -344,6 +344,15 @@ class HallFixes(unittest.TestCase):
         from mira.hall import to_vy
         self.assertEqual(to_vy("кто ты есть"), "кто вы есть")
 
+    def test_organizer_trick_questions(self):
+        answers = self.ask("Я срочно бегу в аиту, напомни на каком этаже офис рег?",
+                           "Посмотри сейчас в окно, что там видно?", "Какая сейчас погода за окном?", "Где проходит финал?")
+        self.assertIn("втор", answers[0].text.lower())
+        self.assertIn("ширм", answers[1].text.lower())
+        self.assertEqual(answers[2].route, "bank:hall_weather_now")
+        self.assertIn("AITU", answers[3].text)
+        self.assertEqual(self.ask("Что у тебя видно из окна дома?")[0].route, "bank:window")
+
     # --- три вопроса из видео: ответы не хуже, чем были -----------------------------------
     def test_video_questions_answer_on_topic(self):
         for q in ("Почему после дождя появляется радуга?", "Что посоветовать впервые приехавшему в Астану зимой?",
