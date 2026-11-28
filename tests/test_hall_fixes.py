@@ -337,6 +337,13 @@ class HallFixes(unittest.TestCase):
         self.assertEqual(self.ask("Мира?")[0].route, "name_call")
         self.assertEqual(self.ask("Повтори за мной: я бот")[0].route, "bank:hall_bot")
 
+    def test_exam_soon_and_no_estte(self):
+        answers = self.ask("Завтра у меня экзамен по физике", "По какому предмету у меня экзамен?")
+        self.assertEqual(answers[0].route, "bank:exam_soon")
+        self.assertIn("физик", answers[1].text.lower())
+        from mira.hall import to_vy
+        self.assertEqual(to_vy("кто ты есть"), "кто вы есть")
+
     # --- три вопроса из видео: ответы не хуже, чем были -----------------------------------
     def test_video_questions_answer_on_topic(self):
         for q in ("Почему после дождя появляется радуга?", "Что посоветовать впервые приехавшему в Астану зимой?",

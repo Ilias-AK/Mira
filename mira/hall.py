@@ -202,7 +202,8 @@ def to_vy(text: str, protect=frozenset()) -> str:
     # imperative right after "вы": "вы ищи" -> "вы ищите" (not past plural "спросили")
     return re.sub(r"\b(вы|Вы)(\s+)([а-яё]+(?:[^л]и|ь))\b",
                   lambda m: m.group(1) + m.group(2) + (m.group(3) + "те" if m.group(3).lower() not in NOT_2SG
-                                                       and not m.group(3).lower().endswith(("лись", "лась", "лся", "лось"))
+                                                       and not m.group(3).lower().endswith(("лись", "лась", "лся", "лось", "ть"))
+                                                       and m.group(3).lower() not in ("весь", "здесь", "теперь", "опять", "очень", "вдоль")
                                                        and m.group(3).lower() not in ("сами", "мои", "свои", "ваши", "они", "им")
                                                        else m.group(3)), text)
 
